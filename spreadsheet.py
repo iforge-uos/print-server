@@ -50,6 +50,15 @@ class Spreadsheet:
         self.gspread_creds = []
         self.queue_sheet = []
 
+    def __enter__(self):
+        self.setup()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # disconnect?
+        return
+
+    def setup(self):
         self.load_vars()
         self.auth()
         self.load_queue_sheet()

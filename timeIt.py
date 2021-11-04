@@ -8,6 +8,7 @@ class Timer:
     
     def __enter__(self):
         self.reset_timer()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         print(f"Timing for: '{self.name}' complete, {self.get_timer():.3f}s elapsed")
