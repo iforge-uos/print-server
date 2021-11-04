@@ -19,7 +19,7 @@ class PrintHub:
         print(f"Disconnected from print hub")
 
     def list_printers(self):
-        return []
+        return ['test1', 'test2', 'test3']
 
     def select_printer(self, printer):
         self.selected_printer = printer
@@ -34,18 +34,19 @@ class PrintHub:
             printer = self.selected_printer
         print(f"Cleared files on {printer}")
 
-    def upload_gcode(self, file, printer=[]):
+    def upload_gcode(self, filename, printer=[]):
         if not printer:
             printer = self.selected_printer
         print(f"Writing to {printer}", end="")
-        with open(file) as iF:
+        with open(filename) as file:
             print(f", complete")
 
     def get_printer_status(self, printer=[]):
         if not printer:
             printer = self.selected_printer
         status = "Waiting"
-        print(f"{printer} status = {status}")
+        # print(f"{printer} status = {status}")
+        return status
 
     def get_printer_progress(self, printer=[]):
         if not printer:
