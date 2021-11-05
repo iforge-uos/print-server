@@ -1,3 +1,5 @@
+import time
+
 import octorest
 from requests.exceptions import ConnectionError
 import json
@@ -31,8 +33,21 @@ class PrintFleet:
                 print(ex)
 
     def update_printing_status(self):
-        for printer, value in self.printers.items():
-            value['printing'] = value['client'].printer()['state']['flags']['printing']
+        for printer_name, printer in self.printers.items():
+            printer['printing'] = printer['client'].printer()['state']['flags']['printing']
+
+    def add_print(self, filename, path=""):
+        for printer_name, printer in self.printers.items():
+            printer["client"].upload(filename, path=path)
+
+    def run_print(self, filename):
+        for printer_name, printer in self.printers.items():
+            printer["client"].select(filename, print=True)
+
+    def clear_files(self):
+        for printer_name, printer in self.printers.items():
+            for file in printer["client"].files()["files"]:
+                printer["client"].delete(file["display"])
 
     # def file_names(self):
     #     """Retrieves the G-code file names from the
@@ -69,7 +84,16 @@ class PrintFleet:
 
 
 with PrintFleet("printers.json") as fleet:
-    pass
+    fleet.add_print("testSquare.gcode")
+    fleet.run_print("testSquare.gcode")
+    error = True
+    while(error):
+        try:
+            fleet.clear_files()
+            error = False
+            print("File deleted")
+        except:
+            pass
 
 # with PrintFleet("TestBench", vars["printer"]["ip"], vars["printer"]["apikey"]) as printer:
 #     print(printer.connect())
