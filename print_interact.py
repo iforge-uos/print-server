@@ -1,9 +1,13 @@
+"""
+Wrapper for octorest library, just to tidy things up :)
+"""
 import octorest
+from requests.exceptions import ConnectionError
 
 
-class PrintHub:
+class Printer:
     def __init__(self):
-        self.selected_printer = []
+        self.client = None
 
     def __enter__(self):
         self.connect()
