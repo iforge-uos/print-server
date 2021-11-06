@@ -24,17 +24,25 @@ class PrintFleet:
     def __exit__(self, exc_type, exc_val, exc_tb):
         del self.printers
 
+
     def connect_clients(self):
         for printer, accessDict in self.printer_access.items():
             try:
                 self.printers[printer] = {"client": octorest.OctoRest(url="http://" + accessDict["ip"] + ":" + accessDict["port"], apikey=accessDict["apikey"])}
-            except ConnectionError as ex:
-                # Handle exception as you wish
-                print(ex)
+            except ConnectionError as e:
+                print("Connection Error")
+            except RuntimeError as e:
+                print("Runtime Error")
+            except TypeError:
+                print("Type Error")
 
     def update_printing_status(self):
         for printer_name, printer in self.printers.items():
-            printer['printing'] = printer['client'].printer()['state']['flags']['printing']
+            try:
+                printer['printing'] = printer['client'].printer()['state']['flags']['printing']
+            except(ConnectionError) as e:
+                print(e)
+
 
     def add_print(self, filename, path=""):
         for printer_name, printer in self.printers.items():
@@ -84,16 +92,17 @@ class PrintFleet:
 
 
 with PrintFleet("printers.json") as fleet:
-    fleet.add_print("testSquare.gcode")
-    fleet.run_print("testSquare.gcode")
-    error = True
-    while(error):
-        try:
-            fleet.clear_files()
-            error = False
-            print("File deleted")
-        except:
-            pass
+    # fleet.add_print("testSquare.gcode")
+    # fleet.run_print("testSquare.gcode")
+    # error = True
+    # while(error):
+    #     try:
+    #         fleet.clear_files()
+    #         error = False
+    #         print("File deleted")
+    #     except:
+    #         pass
+    pass
 
 # with PrintFleet("TestBench", vars["printer"]["ip"], vars["printer"]["apikey"]) as printer:
 #     print(printer.connect())
