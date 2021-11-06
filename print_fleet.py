@@ -15,7 +15,7 @@ class PrintFleet:
         self.printers = {}
         self.connect_clients()
         self.update_printing_status()
-        print(self.printers)
+        # print(self.printers)
 
 
     def __enter__(self):
@@ -41,8 +41,15 @@ class PrintFleet:
             try:
                 printer['printing'] = printer['client'].printer()['state']['flags']['printing']
             except(ConnectionError) as e:
-                print(e)
+                print(f"Connection error: {e}")
 
+    def get_available_printers(self):
+        self.update_printing_status()
+        available_printers = {}
+        for printer_name, printer in self.printers.items():
+            if not printer["printing"]:
+                available_printers[printer_name] = printer
+        return available_printers
 
     def add_print(self, filename, path=""):
         for printer_name, printer in self.printers.items():
@@ -91,18 +98,19 @@ class PrintFleet:
     #     self.client.pause()
 
 
-with PrintFleet("printers.json") as fleet:
-    # fleet.add_print("testSquare.gcode")
-    # fleet.run_print("testSquare.gcode")
-    # error = True
-    # while(error):
-    #     try:
-    #         fleet.clear_files()
-    #         error = False
-    #         print("File deleted")
-    #     except:
-    #         pass
-    pass
+if __name__ == '__main__':
+    with PrintFleet("printers.json") as fleet:
+        # fleet.add_print("testSquare.gcode")
+        # fleet.run_print("testSquare.gcode")
+        # error = True
+        # while(error):
+        #     try:
+        #         fleet.clear_files()
+        #         error = False
+        #         print("File deleted")
+        #     except:
+        #         pass
+        pass
 
 # with PrintFleet("TestBench", vars["printer"]["ip"], vars["printer"]["apikey"]) as printer:
 #     print(printer.connect())

@@ -73,7 +73,7 @@ class Spreadsheet:
         self.gspread_creds = gspread.authorize(self.creds)
 
     def load_queue_sheet(self):
-        self.queue_sheet = self.gspread_creds.open_by_key(self.vars["tokens"]["sheet"]).get_worksheet(1)
+        self.queue_sheet = self.gspread_creds.open_by_key(self.vars["tokens"]["testsheet"]).get_worksheet(1)
 
     def find_status_rows(self, search_str, printer_type=""):
         """

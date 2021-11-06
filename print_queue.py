@@ -30,21 +30,16 @@ class PrintQueue:
             if row[6] == "Awaiting Approval":
                 queueAwaitingApproval.append(self.joblist.pop(i))
 
-    def print_joblist(self):
-        print("Current joblist:")
-        for job in self.joblist:
-            print(job)
+    def get_jobs(self):
+        return self.joblist
 
-    def get_next_job(self):
-        if len(self.joblist) > 0:
-            self.job = self.joblist.pop(0)
-            return [0,self.job]
-        else:
-            # print(f"No queued jobs for {self.printer_type} printers")
-            return [1,[]]
+    def select_job(self, n):
+        self.job = self.joblist[n]
 
     def download_job(self):
         job_filename = self.job[14] + '.gcode'
+        print(f"Downloading: {self.job[0]} - {self.job[3]} - {self.job[6]}, {job_filename}")
         self.gcodeDrive.download_file(self.job[14], job_filename)
+        print("Download complete")
         return job_filename
 

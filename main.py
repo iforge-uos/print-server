@@ -1,31 +1,46 @@
-import print_interact
+import print_fleet
 import print_queue
 import timeIt
+import time
 
 
 if __name__ == '__main__':
-    pq = print_queue.PrintQueue()
-    with print_interact.PrintHub() as pi:
-        # print(pi.list_printers())
-        pq.set_printer_type("Prusa")
-        pq.set_status_type("Running")
-        pq.update_joblist()
-        pq.print_joblist()
-        job_details = pq.get_next_job()
-        print("\nNext job details:")
-        print(job_details)
-        if job_details[0]:
-            print(f"No queued jobs to do")
-        else:
-            available_printers = []
-            for printer in pi.list_printers():
-                if pi.get_printer_status(printer) == "Waiting":
-                    available_printers.append(printer)
+    sleep_time = 10
 
-            # print(available_printers)
+    queue = print_queue.PrintQueue()
+    with print_fleet.PrintFleet("printers.json") as fleet:
+        loop = True
+        while loop:
+            loop = False  # only run single loop for testing
+            # get count of available printers
+            available_printers = fleet.get_available_printers()
+            print(f"Printers available: {len(available_printers)}\n")
 
-            # TODO: improve printer selection (include catch for printbed empty)
-            printer = available_printers.pop(0)
+            if len(available_printers) == 0:  # if none free, wait and restart loop
+                print("No printers available, please wait...")
+                time.sleep(sleep_time)
+                continue
 
-            # job_filename = pq.download_job()
+            # Setup, mostly for testing
+            queue.set_printer_type("Prusa")
+            queue.set_status_type("Queued")
+
+            # update and display the joblist from sheet
+            queue.update_joblist()
+            joblist = queue.get_jobs()
+
+            if len(joblist) == 0:  # if none free, wait and restart loop
+                print("No jobs queued, please wait...")
+                time.sleep(sleep_time)
+                continue
+
+            print("Current joblist:")
+            for i, job in enumerate(joblist):
+                print(f"{i}.\t{job[0]:20s}\t{job[3]:8s}\t{job[6]}")
+
+            # select a job by number
+            print("\nEnter job number to select:")
+            n = int(input())
+            queue.select_job(n)
+            filename = queue.download_job()
 
