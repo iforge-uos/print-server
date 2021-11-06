@@ -10,12 +10,13 @@ class PrintFleet:
         self.printer_access = {}
         with open(printers_filename) as file:
             self.printer_access = json.load(file)
-        # print(self.printers)
+
+        self.selected_printer = {}
 
         self.printers = {}
         self.connect_clients()
         self.update_printing_status()
-        # print(self.printers)
+        print(self.printers)
 
 
     def __enter__(self):
@@ -28,7 +29,7 @@ class PrintFleet:
     def connect_clients(self):
         for printer, accessDict in self.printer_access.items():
             try:
-                self.printers[printer] = {"client": octorest.OctoRest(url="http://" + accessDict["ip"] + ":" + accessDict["port"], apikey=accessDict["apikey"])}
+                self.printers[printer] = {"name": printer, "client": octorest.OctoRest(url="http://" + accessDict["ip"] + ":" + accessDict["port"], apikey=accessDict["apikey"])}
             except ConnectionError as e:
                 print("Connection Error")
             except RuntimeError as e:
@@ -52,17 +53,17 @@ class PrintFleet:
         return available_printers
 
     def add_print(self, filename, path=""):
-        for printer_name, printer in self.printers.items():
-            printer["client"].upload(filename, path=path)
+        self.selected_printer["client"].upload(filename, path=path)
 
     def run_print(self, filename):
-        for printer_name, printer in self.printers.items():
-            printer["client"].select(filename, print=True)
+        self.selected_printer["client"].select(filename, print=True)
 
     def clear_files(self):
-        for printer_name, printer in self.printers.items():
-            for file in printer["client"].files()["files"]:
-                printer["client"].delete(file["display"])
+        for file in self.selected_printer["client"].files()["files"]:
+            self.selected_printer["client"].delete(file["display"])
+
+    def select_printer(self, name):
+        self.selected_printer = self.printers[name]
 
     # def file_names(self):
     #     """Retrieves the G-code file names from the
@@ -99,7 +100,9 @@ class PrintFleet:
 
 
 if __name__ == '__main__':
+    test = 0
     with PrintFleet("printers.json") as fleet:
+        fleet.printers
         # fleet.add_print("testSquare.gcode")
         # fleet.run_print("testSquare.gcode")
         # error = True
@@ -110,9 +113,8 @@ if __name__ == '__main__':
         #         print("File deleted")
         #     except:
         #         pass
-        pass
 
-# with PrintFleet("TestBench", vars["printer"]["ip"], vars["printer"]["apikey"]) as printer:
-#     print(printer.connect())
-#     printer.file_names()
-#     print(printer.get_printer_info())
+        # with PrintFleet("TestBench", vars["printer"]["ip"], vars["printer"]["apikey"]) as printer:
+        #     print(printer.connect())
+        #     printer.file_names()
+        #     print(printer.get_printer_info())
