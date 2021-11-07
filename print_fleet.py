@@ -6,10 +6,8 @@ import json
 
 
 class PrintFleet:
-    def __init__(self, printers_filename):
-        self.printer_access = {}
-        with open(printers_filename) as file:
-            self.printer_access = json.load(file)
+    def __init__(self, printer_access):
+        self.printer_access = printer_access
 
         self.selected_printer = {}
 
@@ -101,7 +99,11 @@ class PrintFleet:
 
 if __name__ == '__main__':
     test = 0
-    with PrintFleet("printers.json") as fleet:
+
+    file = open("secrets.json")
+    secret_vars = json.load(file)
+
+    with PrintFleet(secret_vars["printers"]) as fleet:
         fleet.printers
         # fleet.add_print("testSquare.gcode")
         # fleet.run_print("testSquare.gcode")

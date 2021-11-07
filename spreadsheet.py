@@ -12,18 +12,13 @@ from googleapiclient.discovery import build
 
 
 class Drive:
-    def __init__(self):
-        self.secrets = {}
+    def __init__(self, google_secrets):
+        self.secrets = google_secrets
         self.scope = []
         self.creds = []
         self.drive_service = []
 
-        self.load_vars()
         self.auth()
-
-    def load_vars(self):
-        with open("secrets.json") as file:
-            self.secrets = json.load(file)
 
     def auth(self):
         self.scope = self.secrets["scope"]  # ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -43,8 +38,8 @@ class Drive:
 
 
 class Spreadsheet:
-    def __init__(self):
-        self.vars = {}
+    def __init__(self, google_secrets):
+        self.vars = google_secrets
         self.scope = []
         self.creds = []
         self.gspread_creds = []
@@ -59,13 +54,8 @@ class Spreadsheet:
         return
 
     def setup(self):
-        self.load_vars()
         self.auth()
         self.load_queue_sheet()
-
-    def load_vars(self):
-        with open("secrets.json") as file:
-            self.vars = json.load(file)
 
     def auth(self):
         self.scope = self.vars["scope"]  # ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']

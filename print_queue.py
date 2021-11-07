@@ -2,16 +2,16 @@ from spreadsheet import Spreadsheet, Drive
 
 
 class PrintQueue:
-    def __init__(self):
+    def __init__(self, google_secrets):
         self.running_prints = []
         self.joblist = []
         self.next_job = []
         self.printer_type = ""
         self.status_type = "Queued"
 
-        self.printSheet = Spreadsheet()
+        self.printSheet = Spreadsheet(google_secrets)
 
-        self.gcodeDrive = Drive()
+        self.gcodeDrive = Drive(google_secrets)
 
     def set_printer_type(self, type):
         self.printer_type = type

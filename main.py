@@ -2,16 +2,30 @@ import print_fleet
 import print_queue
 import timeIt
 import time
+import json
 
 
 if __name__ == '__main__':
     sleep_time = 10
 
-    queue = print_queue.PrintQueue()
-    with print_fleet.PrintFleet("printers.json") as fleet:
+    file = open("secrets.json")
+    secret_vars = json.load(file)
+
+    queue = print_queue.PrintQueue(secret_vars["google_secrets"])
+    with print_fleet.PrintFleet(secret_vars["printers"]) as fleet:
         loop = True
-        while loop:
-            # loop = False  # only run single loop for testing
+        while loop:  # loop = False  # only run single loop for testing
+
+            print("Select action: 'l' List status, 'p' run a Print, 'c' handle Completed print")
+            choice = input()
+            if choice == "l":
+                pass
+            elif choice == "p":
+                pass
+            elif choice == "c":
+                pass
+
+
             # get count of available printers
             available_printers = fleet.get_available_printers()
 
