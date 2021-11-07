@@ -14,14 +14,8 @@ from googleapiclient.discovery import build
 class Drive:
     def __init__(self, google_secrets):
         self.secrets = google_secrets
-        self.scope = []
-        self.creds = []
-        self.drive_service = []
 
-        self.auth()
-
-    def auth(self):
-        self.scope = self.secrets["scope"]  # ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        self.scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
         self.creds = ServiceAccountCredentials.from_json_keyfile_dict(self.secrets["tokens"]["serviceaccount"], self.scope)
         self.drive_service = build('drive', 'v3', credentials=self.creds)
 
@@ -40,30 +34,17 @@ class Drive:
 class Spreadsheet:
     def __init__(self, google_secrets):
         self.vars = google_secrets
-        self.scope = []
-        self.creds = []
-        self.gspread_creds = []
-        self.queue_sheet = []
+        self.scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        self.creds = ServiceAccountCredentials.from_json_keyfile_dict(self.vars["tokens"]["serviceaccount"], self.scope)
+        self.gspread_creds = gspread.authorize(self.creds)
+        self.queue_sheet = self.gspread_creds.open_by_key(self.vars["tokens"]["test_sheet"]).get_worksheet(1)
 
     def __enter__(self):
-        self.setup()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # disconnect?
         return
-
-    def setup(self):
-        self.auth()
-        self.load_queue_sheet()
-
-    def auth(self):
-        self.scope = self.vars["scope"]  # ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-        self.creds = ServiceAccountCredentials.from_json_keyfile_dict(self.vars["tokens"]["serviceaccount"], self.scope)
-        self.gspread_creds = gspread.authorize(self.creds)
-
-    def load_queue_sheet(self):
-        self.queue_sheet = self.gspread_creds.open_by_key(self.vars["tokens"]["testsheet"]).get_worksheet(1)
 
     def find_status_rows(self, search_str, printer_type=""):
         """
