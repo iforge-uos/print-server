@@ -13,16 +13,12 @@ class PrintFleet:
 
         self.printers = {}
         self.connect_clients()
-        self.update_printing_status()
-        print(self.printers)
-
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         del self.printers
-
 
     def connect_clients(self):
         for printer, accessDict in self.printer_access.items():
@@ -35,16 +31,47 @@ class PrintFleet:
             except TypeError:
                 print("Type Error")
 
-    def update_printing_status(self):
-        for printer_name, printer in self.printers.items():
-            try:
-                printer['printing'] = printer['client'].printer()['state']['flags']['printing']
-            except(ConnectionError) as e:
-                print(f"Connection error: {e}")
+    def update_status(self, queue_running):
+        for printer in self.printers.values():
+            keep_trying = True
+            i = 0
+            while keep_trying or i > 4:  #
+                i += 1
+                try:
+                    printer['printing'] = printer['client'].printer()['state']['flags']['printing']
+                    if printer['printing']:
+                        printer['status'] = "printing"
+                    else:
+                        printer['status'] = "available"
+                    keep_trying = False
+                except(ConnectionError) as e:
+                    # print(f"Connection error: {e}")
+                    pass
 
-    def get_available_printers(self):
-        self.update_printing_status()
-        available_printers = {}
+        for name in queue_running:
+            try:
+                if not self.printers[name]['printing']:
+                    self.printers[name]['status'] = "finished"
+            except KeyError:
+                # not in printer list
+                continue
+
+        for printer in self.printers.values():
+            if printer['name'] not in queue_running and printer['printing']:
+                printer['status'] = "invalid"
+
+    def get_status(self):
+        status_dict = {"available": [], "printing": [], "finished": [], "invalid": []}
+        for printer in self.printers.values():
+            status_dict[printer["status"]].append(printer["name"])
+        return status_dict
+
+    def get_printer_counts(self):
+        self.update_status()
+        printing = 0
+        complete = 0
+        waiting = 0
+
         for printer_name, printer in self.printers.items():
             if not printer["printing"]:
                 available_printers[printer_name] = printer

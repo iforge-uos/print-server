@@ -2,6 +2,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 
+
 class Spreadsheet:
     def __init__(self, google_secrets):
         self.vars = google_secrets
@@ -9,6 +10,7 @@ class Spreadsheet:
         self.creds = ServiceAccountCredentials.from_json_keyfile_dict(self.vars["tokens"]["serviceaccount"], self.scope)
         self.gspread_creds = gspread.authorize(self.creds)
         self.queue_sheet = self.gspread_creds.open_by_key(self.vars["tokens"]["test_sheet"]).get_worksheet(1)
+        self.dataframe = None
 
     def __enter__(self):
         return self
@@ -16,6 +18,25 @@ class Spreadsheet:
     def __exit__(self, exc_type, exc_val, exc_tb):
         # disconnect?
         return
+
+    def update_data(self):
+        self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records())
+
+        # example usage
+        # print(self.dataframe)
+        # print(self.dataframe.loc[:, "prus"] == "Alistair Mitchell")
+        # print(self.dataframe.loc[self.dataframe.loc[:, "prus"] == "Alistair Mitchell"])
+
+    def get_running_printers(self):
+        running_printers = []
+
+        self.update_data()
+        for printer_name in self.dataframe.loc[self.dataframe.loc[:, "Status"] == "Running", "Printer"]:
+            running_printers.append(printer_name)
+
+        return running_printers
+
+    #####
 
     def find_status_rows(self, search_str, printer_type=""):
         """
@@ -37,3 +58,27 @@ class Spreadsheet:
 
     def set_cell_value(self, row, col, value):
         self.queue_sheet.update_cell(row, col, value)
+
+
+from cryptography.fernet import Fernet
+import json
+
+if __name__ == "__main__":
+    with open('secrets.key', 'rb') as file:
+        key = file.read()
+
+    # load plain secrets
+    with open('secrets.json.enc', 'rb') as f:
+        data = f.read()
+
+    # encrypt
+    fernet = Fernet(key)
+    decrypted = fernet.decrypt(data)
+
+    sleep_time = 10
+
+    secret_vars = json.loads(decrypted)
+
+    queue = Spreadsheet(secret_vars["google_secrets"])
+    queue.update_data()
+    print(queue.get_running_printers())

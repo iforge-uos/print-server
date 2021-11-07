@@ -35,57 +35,64 @@ if __name__ == '__main__':
         loop = True
         while loop:  # loop = False  # only run single loop for testing
 
+            fleet.update_status(queue.get_running_printers())
+            printer_status_dict = fleet.get_status()
+
             print("Select action: 'l' List status, 'p' run a Print, 'c' handle Completed print")
             choice = input()
-            if choice == "l":
-                pass
-            elif choice == "p":
-                pass
-            elif choice == "c":
-                pass
+            if choice == "l":  # list status'
+                print(f"Current printer status:")
+                print(f"{len(printer_status_dict['available'])} / {len(fleet.printers)} - Available")
+                print(f"{len(printer_status_dict['printing'])} / {len(fleet.printers)} - Printing")
+                print(f"{len(printer_status_dict['finished'])} / {len(fleet.printers)} - Finished")
+                print(f"{len(printer_status_dict['invalid'])} / {len(fleet.printers)} - Invalid")
 
+            elif choice == "p":  # select print and printer
+                if len(printer_status_dict["available"]) == 0:
+                    print("No available printers, try again later")
+                    continue
 
-            # get count of available printers
-            available_printers = fleet.get_available_printers()
+                queue.set_printer_type("Prusa")
+                queue.set_status_type("Queued")
 
-            if len(available_printers) == 0:  # if none free, wait and restart loop
-                print("No printers available, please wait...")
-                time.sleep(sleep_time)
-                continue
+                queue.update_joblist()
+                joblist = queue.get_jobs()
 
-            print(f"Printers available: {len(available_printers)}\n")
+                if len(joblist) == 0:  # if none free, wait and restart loop
+                    print("\nNo jobs queued, try again later")
+                    continue
 
-            # Setup, mostly for testing
-            queue.set_printer_type("Prusa")
-            queue.set_status_type("Queued")
+                print("\nCurrent joblist:")
+                for i, job in enumerate(joblist):
+                    print(f"{i}.\t{job[0]:20s}\t{job[3]:8s}\t{job[6]}")
 
-            # update and display the joblist from sheet
-            queue.update_joblist()
-            joblist = queue.get_jobs()
+                # select a job by number
+                print("\nEnter job number to select:")
+                n = None
+                while n not in list(range(0,len(joblist))):
+                    n = int(input())
+                queue.select_job(n)
+                filename = queue.download_job()
+                filename = "testPrint.gcode"  # firmware version checks freeze prints - use test print instead of downloaded file
 
-            if len(joblist) == 0:  # if none free, wait and restart loop
-                print("No jobs queued, please wait...")
-                time.sleep(sleep_time)
-                continue
+                print("Available printers:")
+                for printer_name in printer_status_dict['available']:
+                    print(f" - {printer_name}")
 
-            print("Current joblist:")
-            for i, job in enumerate(joblist):
-                print(f"{i}.\t{job[0]:20s}\t{job[3]:8s}\t{job[6]}")
+                # select a job by number
+                print("\nEnter printer name to select:")
+                selection_name = ""
+                while selection_name not in printer_status_dict['available']:
+                    selection_name = input()
+                    if selection_name not in printer_status_dict['available']:
+                        print(f"{selection_name} printer not available")
+                fleet.select_printer(selection_name)
+                fleet.add_print(filename)
+                fleet.run_print(filename)
 
-            # select a job by number
-            print("\nEnter job number to select:")
-            n = int(input())
-            queue.select_job(n)
-            filename = queue.download_job()
-            filename = "testPrint.gcode"  # firmware version checks freeze prints - use test print instead of downloaded file
+                # TODO: Update spreadsheet
 
-            print("Available printers:")
-            for printer_name in available_printers.keys():
-                print(f" - {printer_name}")
-
-            # select a job by number
-            print("\nEnter printer name to select:")
-            selection_name = input()
-            fleet.select_printer(selection_name)
-            fleet.add_print(filename)
-            fleet.run_print(filename)
+            elif choice == "c":  # unhandled, will select "finished" print and mark complete/fail
+                if len(printer_status_dict["finished"]) == 0:
+                    print("No printers finished, try again later")
+                    continue

@@ -18,6 +18,9 @@ class PrintQueue:
 
         self.gcode_drive = Drive(self.google_secrets)
 
+    def get_running_printers(self):
+        return self.print_sheet.get_running_printers()
+
     def set_printer_type(self, type):
         self.printer_type = type
 
