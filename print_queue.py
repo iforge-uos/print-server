@@ -1,4 +1,5 @@
-from spreadsheet import Spreadsheet, Drive
+from spreadsheet import Spreadsheet
+from drive import Drive
 
 
 class PrintQueue:
