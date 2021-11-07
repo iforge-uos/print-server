@@ -3,13 +3,32 @@ import print_queue
 import timeIt
 import time
 import json
+import argparse
+from cryptography.fernet import Fernet
 
 
 if __name__ == '__main__':
+    # parser = argparse.ArgumentParser(description='iForge 3D Print Queue Management System')
+    # parser.add_argument('secrets_key', type=str,
+    #                     help='decryption key for secrets.json')
+    #
+    # args = parser.parse_args()
+    # secrets_key = args.secrets_key
+
+    with open('secrets.key', 'rb') as file:
+        key = file.read()
+
+    # load plain secrets
+    with open('secrets.json.enc', 'rb') as f:
+        data = f.read()
+
+    # encrypt
+    fernet = Fernet(key)
+    decrypted = fernet.decrypt(data)
+
     sleep_time = 10
 
-    file = open("secrets.json")
-    secret_vars = json.load(file)
+    secret_vars = json.loads(decrypted)
 
     queue = print_queue.PrintQueue(secret_vars["google_secrets"])
     with print_fleet.PrintFleet(secret_vars["printers"]) as fleet:
