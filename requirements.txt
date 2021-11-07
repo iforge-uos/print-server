@@ -1,0 +1,5 @@
+octorest~=0.4
+requests~=2.26.0
+gspread~=4.0.1
+oauth2client~=4.1.3
+google-api-python-client~=2.29.0
