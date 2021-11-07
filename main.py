@@ -6,7 +6,6 @@ import json
 import argparse
 from cryptography.fernet import Fernet
 
-
 if __name__ == '__main__':
     # parser = argparse.ArgumentParser(description='iForge 3D Print Queue Management System')
     # parser.add_argument('secrets_key', type=str,
@@ -69,7 +68,7 @@ if __name__ == '__main__':
                 # select a job by number
                 print("\nEnter job number to select:")
                 n = None
-                while n not in list(range(0,len(joblist))):
+                while n not in list(range(0, len(joblist))):
                     n = int(input())
                 queue.select_job(n)
                 filename = queue.download_job()

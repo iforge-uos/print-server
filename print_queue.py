@@ -21,21 +21,21 @@ class PrintQueue:
     def get_running_printers(self):
         return self.print_sheet.get_running_printers()
 
-    def set_printer_type(self, type):
-        self.printer_type = type
+    def set_printer_type(self, printer_type):
+        self.printer_type = printer_type
 
-    def set_status_type(self, type):  # for debug only - allows search for other status' in queue
-        self.status_type = type
+    def set_status_type(self, status_type):  # for debug only - allows search for other status' in queue
+        self.status_type = status_type
 
     def update_joblist(self):
         self.joblist = []
         for row in self.print_sheet.find_status_rows(self.status_type, self.printer_type):
             self.joblist.append(row)
 
-        queueAwaitingApproval = []
+        queue_awaiting_approval = []
         for i, row in enumerate(self.joblist):
             if row[6] == "Awaiting Approval":
-                queueAwaitingApproval.append(self.joblist.pop(i))
+                queue_awaiting_approval.append(self.joblist.pop(i))
 
     def get_jobs(self):
         return self.joblist
@@ -49,4 +49,3 @@ class PrintQueue:
         self.gcode_drive.download_file(self.job[14], job_filename)
         print("Download complete")
         return job_filename
-

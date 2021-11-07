@@ -1,6 +1,8 @@
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
+from oauth2client.service_account import ServiceAccountCredentials
+from cryptography.fernet import Fernet
+import json
 
 
 class Spreadsheet:
@@ -59,9 +61,6 @@ class Spreadsheet:
     def set_cell_value(self, row, col, value):
         self.queue_sheet.update_cell(row, col, value)
 
-
-from cryptography.fernet import Fernet
-import json
 
 if __name__ == "__main__":
     with open('secrets.key', 'rb') as file:

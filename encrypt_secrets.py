@@ -1,4 +1,3 @@
-#this imports the cryptography package
 from cryptography.fernet import Fernet
 from os import path
 
