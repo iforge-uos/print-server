@@ -44,6 +44,7 @@ if __name__ == '__main__':
             n = int(input())
             queue.select_job(n)
             filename = queue.download_job()
+            filename = "testPrint.gcode"  # firmware version checks freeze prints - use test print instead of downloaded file
 
             print("Available printers:")
             for printer_name in available_printers.keys():
