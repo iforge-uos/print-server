@@ -56,6 +56,7 @@ if __name__ == '__main__':
             print(f"{len(backend.printer_status_dict['printing'])} / {len(backend.fleet.printers)} - Printing")
             print(f"{len(backend.printer_status_dict['finished'])} / {len(backend.fleet.printers)} - Finished")
             print(f"{len(backend.printer_status_dict['invalid'])} / {len(backend.fleet.printers)} - Invalid")
+            print(f"{len(backend.printer_status_dict['offline'])} / {len(backend.fleet.printers)} - Offline")
 
         elif choice == "p":  # select print and printer
             if len(backend.printer_status_dict["available"]) == 0:

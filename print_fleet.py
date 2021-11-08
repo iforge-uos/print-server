@@ -32,20 +32,24 @@ class PrintFleet:
 
     def update_status(self, queue_running):
         for printer in self.printers.values():
-            keep_trying = True
             i = 0
-            while keep_trying or i < 4:  #
+            while True:
                 i += 1
+                printer['status'] = "offline"
+                printer['printing'] = False
                 try:
                     printer['printing'] = printer['client'].printer()['state']['flags']['printing']
                     if printer['printing']:
                         printer['status'] = "printing"
                     else:
                         printer['status'] = "available"
-                    keep_trying = False
                 except ConnectionError as e:
-                    # print(f"Connection error: {e}")
-                    pass
+                    if i > 4:
+                        break
+                    continue
+                except RuntimeError as e:
+                    # print(e)  # TODO: logging
+                    break
 
         for name in queue_running:
             try:
@@ -60,21 +64,10 @@ class PrintFleet:
                 printer['status'] = "invalid"
 
     def get_status(self):
-        status_dict = {"available": [], "printing": [], "finished": [], "invalid": []}
+        status_dict = {"available": [], "printing": [], "finished": [], "invalid": [], "offline": []}
         for printer in self.printers.values():
             status_dict[printer["status"]].append(printer["name"])
         return status_dict
-
-    def get_printer_counts(self):
-        available_printers = {}
-        printing = 0
-        complete = 0
-        waiting = 0
-
-        for printer_name, printer in self.printers.items():
-            if not printer["printing"]:
-                available_printers[printer_name] = printer
-        return available_printers
 
     def add_print(self, filename, path=""):
         self.selected_printer["client"].upload(filename, path=path)
