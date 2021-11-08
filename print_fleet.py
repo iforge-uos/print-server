@@ -38,17 +38,21 @@ class PrintFleet:
                 printer['status'] = "offline"
                 printer['printing'] = False
                 try:
+
                     printer['printing'] = printer['client'].printer()['state']['flags']['printing']
                     if printer['printing']:
                         printer['status'] = "printing"
                     else:
                         printer['status'] = "available"
+                    print(printer)
+                    break
                 except ConnectionError as e:
+                    print(e)
                     if i > 4:
                         break
                     continue
                 except RuntimeError as e:
-                    # print(e)  # TODO: logging
+                    print(e)  # TODO: logging
                     break
 
         for name in queue_running:
