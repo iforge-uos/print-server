@@ -23,7 +23,8 @@ class PrintFleet:
     def connect_clients(self):
         for printer, accessDict in self.printer_access.items():
             try:
-                self.printers[printer] = {"name": printer, "client": octorest.OctoRest(url="http://" + accessDict["ip"] + ":" + accessDict["port"], apikey=accessDict["apikey"])}
+                self.printers[printer] = {"name": printer, "client": octorest.OctoRest(
+                    url="http://" + accessDict["ip"] + ":" + accessDict["port"], apikey=accessDict["apikey"])}
             except ConnectionError as e:
                 print("Connection Error")
             except RuntimeError as e:
@@ -44,7 +45,7 @@ class PrintFleet:
                     else:
                         printer['status'] = "available"
                     keep_trying = False
-                except(ConnectionError) as e:
+                except ConnectionError as e:
                     # print(f"Connection error: {e}")
                     pass
 
@@ -67,7 +68,7 @@ class PrintFleet:
         return status_dict
 
     def get_printer_counts(self):
-        self.update_status()
+        available_printers = {}
         printing = 0
         complete = 0
         waiting = 0

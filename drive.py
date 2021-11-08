@@ -11,7 +11,8 @@ class Drive:
         self.secrets = google_secrets
 
         self.scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-        self.creds = ServiceAccountCredentials.from_json_keyfile_dict(self.secrets["tokens"]["serviceaccount"], self.scope)
+        self.creds = ServiceAccountCredentials.from_json_keyfile_dict(self.secrets["tokens"]["serviceaccount"],
+                                                                      self.scope)
         self.drive_service = build('drive', 'v3', credentials=self.creds)
 
     def download_file(self, file_id, filename):
