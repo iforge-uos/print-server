@@ -1,5 +1,3 @@
-import time
-
 import octorest
 from requests.exceptions import ConnectionError
 import json
@@ -36,7 +34,7 @@ class PrintFleet:
         for printer in self.printers.values():
             keep_trying = True
             i = 0
-            while keep_trying or i > 4:  #
+            while keep_trying or i < 4:  #
                 i += 1
                 try:
                     printer['printing'] = printer['client'].printer()['state']['flags']['printing']
