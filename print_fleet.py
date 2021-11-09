@@ -44,7 +44,6 @@ class PrintFleet:
                         printer['status'] = "printing"
                     else:
                         printer['status'] = "available"
-                    print(printer)
                     break
                 except ConnectionError as e:
                     print(e)

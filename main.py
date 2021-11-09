@@ -10,7 +10,7 @@ class Backend:
         self.load_secrets()
 
         self.printer_status_dict = {}
-        self.queue = print_queue.PrintQueue(self.secrets["google_secrets"])
+        self.prusa_queue = print_queue.PrintQueue(self.secrets["google_secrets"], "Prusa")
         self.fleet = print_fleet.PrintFleet(self.secrets["printers"])
         self.update()
 
@@ -29,7 +29,8 @@ class Backend:
         self.secrets = json.loads(decrypted)
 
     def update(self):
-        self.fleet.update_status(self.queue.get_running_printers())
+        self.prusa_queue.update()
+        self.fleet.update_status(self.prusa_queue.get_running_printers())
         self.printer_status_dict = self.fleet.get_status()
 
 
@@ -63,27 +64,24 @@ if __name__ == '__main__':
                 print("No available printers, try again later")
                 continue
 
-            backend.queue.set_printer_type("Prusa")
-            backend.queue.set_status_type("Queued")
+            backend.prusa_queue.update()
+            joblist = backend.prusa_queue.get_jobs()
 
-            backend.queue.update_joblist()
-            joblist = backend.queue.get_jobs()
-
-            if len(joblist) == 0:  # if none free, wait and restart loop
+            if joblist.shape[0] == 0:  # if none free, wait and restart loop
                 print("\nNo jobs queued, try again later")
                 continue
 
             print("\nCurrent joblist:")
-            for i, job in enumerate(joblist):
+            for i, job in enumerate(joblist.loc[:].values.tolist()):
                 print(f"{i}.\t{job[0]:20s}\t{job[3]:8s}\t{job[6]}")
 
             # select a job by number
             print("\nEnter job number to select:")
             n = None
-            while n not in list(range(0, len(joblist))):
+            while n not in list(range(0, joblist.shape[0])):
                 n = int(input())
-            backend.queue.select_job(n)
-            # filename = queue.download_job()
+            backend.prusa_queue.select_job(n)
+            filename = backend.prusa_queue.download_job()
             filename = "testPrint.gcode"  # firmware version checks freeze prints - use test print instead of downloaded file
 
             print("Available printers:")
@@ -92,16 +90,17 @@ if __name__ == '__main__':
 
             # select a job by number
             print("\nEnter printer name to select:")
-            selection_name = ""
-            while selection_name not in backend.printer_status_dict['available']:
+            while True:
                 selection_name = input()
                 if selection_name not in backend.printer_status_dict['available']:
                     print(f"{selection_name} printer not available")
+                else:
+                    break
             backend.fleet.select_printer(selection_name)
             backend.fleet.add_print(filename)
             backend.fleet.run_print(filename)
 
-            # TODO: Update spreadsheet
+            # TODO: Mark print "Running" & printer name
 
         elif choice == "c":  # unhandled, will select "finished" print and mark complete/fail
             if len(backend.printer_status_dict["finished"]) == 0:

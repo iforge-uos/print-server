@@ -1,51 +1,35 @@
 from spreadsheet import Spreadsheet
 from drive import Drive
+import pandas as pd
 
 
 class PrintQueue:
-    def __init__(self, google_secrets):
+    def __init__(self, google_secrets, printer_type):
         self.google_secrets = google_secrets
-        self.running_prints = []
-        self.job = None
-        self.joblist = []
-        self.next_job = []
-
-        # for testing
-        self.printer_type = ""
-        self.status_type = "Queued"
+        self.joblist = pd.DataFrame()
+        self.job = pd.DataFrame()
+        self.printer_type = printer_type
 
         self.print_sheet = Spreadsheet(self.google_secrets)
 
         self.gcode_drive = Drive(self.google_secrets)
 
+    def update(self):
+        self.print_sheet.update_data()
+        self.joblist = self.print_sheet.get_queued()[self.printer_type]
+
     def get_running_printers(self):
-        return self.print_sheet.get_running_printers()
-
-    def set_printer_type(self, printer_type):
-        self.printer_type = printer_type
-
-    def set_status_type(self, status_type):  # for debug only - allows search for other status' in queue
-        self.status_type = status_type
-
-    def update_joblist(self):
-        self.joblist = []
-        for row in self.print_sheet.find_status_rows(self.status_type, self.printer_type):
-            self.joblist.append(row)
-
-        queue_awaiting_approval = []
-        for i, row in enumerate(self.joblist):
-            if row[6] == "Awaiting Approval":
-                queue_awaiting_approval.append(self.joblist.pop(i))
+        return self.print_sheet.get_running()[self.printer_type]["Printer"].tolist()
 
     def get_jobs(self):
         return self.joblist
 
     def select_job(self, n):
-        self.job = self.joblist[n]
+        self.job = self.joblist.iloc[n]
 
     def download_job(self):
-        job_filename = self.job[14] + '.gcode'
-        print(f"Downloading: {self.job[0]} - {self.job[3]} - {self.job[6]}, {job_filename}")
-        self.gcode_drive.download_file(self.job[14], job_filename)
+        job_filename = self.job.values[13] + '.gcode'
+        print(f"Downloading: {self.job.values[0]} - {self.job.values[3]} - {self.job.values[6]}, {job_filename}")
+        self.gcode_drive.download_file(self.job.values[13], job_filename)
         print("Download complete")
         return job_filename
