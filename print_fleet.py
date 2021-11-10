@@ -24,11 +24,14 @@ class PrintFleet:
                 self.printers[printer] = {"name": printer, "client": octorest.OctoRest(
                     url="http://" + accessDict["ip"] + ":" + accessDict["port"], apikey=accessDict["apikey"])}
             except ConnectionError as e:
-                print("Connection Error")
+                # print("Connection Error")
+                pass
             except RuntimeError as e:
-                print("Runtime Error")
+                # print("Runtime Error")
+                pass
             except TypeError:
-                print("Type Error")
+                # print("Type Error")
+                pass
 
     def update_status(self, queue_running):
         for printer in self.printers.values():
@@ -46,12 +49,12 @@ class PrintFleet:
                         printer['status'] = "available"
                     break
                 except ConnectionError as e:
-                    print(e)
-                    if i > 4:
+                    # print(e)
+                    if i >= 1:
                         break
                     continue
                 except RuntimeError as e:
-                    print(e)  # TODO: logging
+                    # print(e)  # TODO: logging
                     break
 
         for name in queue_running:
@@ -80,7 +83,10 @@ class PrintFleet:
 
     def clear_files(self):
         for file in self.selected_printer["client"].files()["files"]:
-            self.selected_printer["client"].delete(file["display"])
+            try:
+                self.selected_printer["client"].delete(file["display"])
+            except RuntimeError as e:
+                print(f"Error, usually from non-existent path? - {e}")
 
     def select_printer(self, name):
         self.selected_printer = self.printers[name]
