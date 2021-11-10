@@ -38,7 +38,7 @@ class Backend:
         filename = self.prusa_queue.download_selected()
         self.fleet.select_printer(printer_name)
         self.fleet.add_print(filename)
-        # self.fleet.run_print(filename)
+        self.fleet.run_print(filename)
 
         self.prusa_queue.mark_running(printer_name)
 
