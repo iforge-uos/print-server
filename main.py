@@ -2,6 +2,7 @@ import print_fleet
 import print_queue
 import json
 from cryptography.fernet import Fernet
+import time
 
 
 class Backend:
@@ -32,6 +33,22 @@ class Backend:
         self.prusa_queue.update()
         self.fleet.update_status(self.prusa_queue.get_running_printers())
         self.printer_status_dict = self.fleet.get_status()
+
+    def do_print(self, printer_name):
+        filename = self.prusa_queue.download_selected()
+        self.fleet.select_printer(printer_name)
+        self.fleet.add_print(filename)
+        # self.fleet.run_print(filename)
+
+        self.prusa_queue.mark_running(printer_name)
+
+    def end_print(self, printer_name, result, comment=""):
+        # TODO: any other handling of finished prints?
+        # TODO: extract completed filename from printer for mark complete? (more robust?)
+        #   - currently only works by printer
+        self.prusa_queue.mark_result(printer_name, result, comment)
+        self.fleet.select_printer(printer_name)
+        self.fleet.clear_files()
 
 
 if __name__ == '__main__':
@@ -73,36 +90,66 @@ if __name__ == '__main__':
 
             print("\nCurrent joblist:")
             for i, job in enumerate(joblist.loc[:].values.tolist()):
-                print(f"{i}.\t{job[0]:20s}\t{job[3]:8s}\t{job[6]}")
+                print(f"{i}.\t{job[0]:20s}\t{time.strftime('%H:%M:%S', time.gmtime(job[3]*24*60*60)):8s}\t{job[7]}")
 
-            # select a job by number
-            print("\nEnter job number to select:")
+            # select a selected by number
+            print("\nEnter selected number to select:")
             n = None
-            while n not in list(range(0, joblist.shape[0])):
-                n = int(input())
-            backend.prusa_queue.select_job(n)
-            filename = backend.prusa_queue.download_job()
-            filename = "testPrint.gcode"  # firmware version checks freeze prints - use test print instead of downloaded file
+            while True:
+                n = input()
+                try:
+                    n = int(n)
+                except TypeError:
+                    pass
+
+                if n in list(range(0, joblist.shape[0])):
+                    break
+                print(f"{n} not recognised, try again")
+
+            backend.prusa_queue.select_by_id(joblist.loc[:, "Unique ID"].values[n])
 
             print("Available printers:")
             for printer_name in backend.printer_status_dict['available']:
                 print(f" - {printer_name}")
 
-            # select a job by number
+            # select a selected by number
             print("\nEnter printer name to select:")
             while True:
-                selection_name = input()
-                if selection_name not in backend.printer_status_dict['available']:
-                    print(f"{selection_name} printer not available")
-                else:
+                printer_name = input()
+                if printer_name in backend.printer_status_dict['available']:
                     break
-            backend.fleet.select_printer(selection_name)
-            backend.fleet.add_print(filename)
-            backend.fleet.run_print(filename)
+                print(f"{printer_name} not recognised, try again")
 
-            # TODO: Mark print "Running" & printer name
+            backend.do_print(printer_name)
 
         elif choice == "c":  # unhandled, will select "finished" print and mark complete/fail
             if len(backend.printer_status_dict["finished"]) == 0:
                 print("No printers finished, try again later")
                 continue
+
+            print("Finished printers:")
+            for printer_name in backend.printer_status_dict['finished']:
+                print(f" - {printer_name}")
+
+            # select a selected by number
+            print("\nEnter printer name to select:")
+            while True:
+                printer_name = input()
+                if printer_name in backend.printer_status_dict['finished']:
+                    break
+                print(f"{printer_name} not recognised, try again")
+
+            print("Was the print successful? [Complete/Failed]")
+            while True:
+                cf = input()
+                if cf in ['Complete', 'Failed']:
+                    break
+                print(f"{cf} not recognised, try again")
+
+            if cf == "Failed":
+                print(f"Please enter failure comment for printer: {printer_name}")
+                comment = input()
+            else:
+                comment = ""
+
+            backend.end_print(printer_name, cf, comment)
