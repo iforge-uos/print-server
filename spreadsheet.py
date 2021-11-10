@@ -23,7 +23,7 @@ class Spreadsheet:
         return
 
     def update_data(self):
-        self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records())
+        self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA"))
 
         # example usage
         # print(self.dataframe)
@@ -58,8 +58,27 @@ class Spreadsheet:
     def get_cell_value(self, row, col):
         return self.queue_sheet.cell(row, col).value
 
-    def set_cell_value(self, row, col, value):
-        self.queue_sheet.update_cell(row, col, value)
+    def set_row(self, data):
+        self.update_data()  # ensure data is up to date
+        row = self.dataframe.index[self.dataframe.loc[:, "Unique ID"] == data.loc[:, "Unique ID"].values[0]].tolist()
+        if len(row) != 1:
+            raise TypeError(f"Multiple rows match: {data.loc[:, 'Unique ID']}")
+
+        row = row[0] + 2  # +2 for header & zero-indexing,
+
+        # values = []
+        # for val in data.values.tolist():  # elementwise convert numpy numbers to standard numbers
+        #     try:
+        #         values.append(val.item())
+        #     except AttributeError:  # for inconvertible data-types
+        #         values.append(val)
+
+        self.queue_sheet.update(f"{row}:{row}", data.values.tolist(), raw=False)  # [values] must be a 2x-nested list to write correctly
+        """
+        [[1, 2], [3, 4]]        - writes 2x2
+        [[1, 2, 3, 4]]          - writes 1x4
+        [[1], [2], [3], [4]]    - writes 4x1
+        """
 
 
 if __name__ == "__main__":
