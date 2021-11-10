@@ -64,10 +64,11 @@ if __name__ == '__main__':
     loop = True
     while loop:  # loop = False  # only run single loop for testing
 
-        backend.update()
-
         print("Select action: 'l' List status, 'p' run a Print, 'c' handle Completed print")
         choice = input()
+
+        backend.update()
+
         if choice == "l":  # list status'
             print(f"Current printer status:")
             print(f"{len(backend.printer_status_dict['available'])} / {len(backend.fleet.printers)} - Available")

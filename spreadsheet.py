@@ -23,7 +23,14 @@ class Spreadsheet:
         return
 
     def update_data(self):
-        self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA"))
+        while True:
+            try:
+                self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA"))
+                break
+            except gspread.exceptions.APIError as e:
+                # temporary error, keep trying
+                print(f"APIError: {e}\nRetrying every 5 seconds")
+                time.sleep(5)
 
         # example usage
         # print(self.dataframe)
