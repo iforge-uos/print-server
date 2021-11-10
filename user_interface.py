@@ -1,19 +1,18 @@
 import PySimpleGUI as sg
 from main import Backend
+import interface_passcode
+
+MASTER_PASSCODE = "69420"
 
 
 def make_window(theme):
     sg.theme(theme)
-    menu_def = [['&Application', ['E&xit']],
-                ['&Help', ['&About']]]
-    right_click_menu_def = [[], ['Nothing', 'More Nothing', 'Exit']]
 
     # Table Data
     data = [["John", 10], ["Jen", 5]]
     headings = ["Name", "Score"]
 
-    main_layout = [[sg.Menu(menu_def, key='-MENU-')],
-                   [sg.Text('Anything that requires user-input is in this tab!')],
+    main_layout = [[sg.Text('Anything that requires user-input is in this tab!')],
                    [sg.Input(key='-INPUT-')],
                    [sg.Slider(orientation='h', key='-SKIDER-'),
                     sg.Image(data=sg.DEFAULT_BASE64_LOADING_GIF, enable_events=True, key='-GIF-IMAGE-'), ],
@@ -35,17 +34,12 @@ def make_window(theme):
                      [sg.ProgressBar(1000, orientation='h', size=(20, 20), key='-PROGRESS BAR-'),
                       sg.Button('Test Progress bar')]]
 
-    start_layout = [[sg.Text("Anything you would use to graph will display here!")],
-                    [sg.Graph((200, 200), (0, 0), (200, 200), background_color="black", key='-GRAPH-',
-                              enable_events=True)],
-                    [sg.T('Click anywhere on graph to draw a circle')],
+    start_layout = [[sg.Text("Start print from queue")],
                     [sg.Table(values=data, headings=headings, max_col_width=25,
-                              background_color='black',
                               auto_size_columns=True,
                               display_row_numbers=True,
                               justification='right',
-                              num_rows=2,
-                              alternating_row_color='black',
+                              # num_rows=2,
                               key='-TABLE-',
                               row_height=25)]]
 
@@ -65,11 +59,12 @@ def make_window(theme):
 
 
 def main():
-    window = make_window(sg.theme())
+    window = make_window(sg.theme("Dark Blue 12"))
 
     # This is an Event Loop
     while True:
         event, values = window.read(timeout=100)
+        print(event)
         # keep an animation running so show things are happening
         window['-GIF-IMAGE-'].update_animation(sg.DEFAULT_BASE64_LOADING_GIF, time_between_frames=100)
         if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
@@ -116,8 +111,11 @@ def main():
             window = make_window(theme_chosen)
 
     window.close()
-    exit(0)
 
 
 if __name__ == '__main__':
-    main()
+    while True:
+        if interface_passcode.main(MASTER_PASSCODE):
+            main()
+        else:
+            break
