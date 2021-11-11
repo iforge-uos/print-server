@@ -64,7 +64,7 @@ if __name__ == '__main__':
     loop = True
     while loop:  # loop = False  # only run single loop for testing
 
-        print("Select action: 'l' List status, 'p' run a Print, 'c' handle Completed print")
+        print("Select action: 'l' List status, 'p' run a Print, 'c' handle Completed print, 'x' to exit")
         choice = input()
 
         backend.update()
@@ -152,5 +152,7 @@ if __name__ == '__main__':
                 comment = input()
             else:
                 comment = ""
+        elif choice == "x":
+            exit()
 
             backend.end_print(printer_name, cf, comment)
