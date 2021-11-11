@@ -24,13 +24,13 @@ class PrintFleet:
                 self.printers[printer] = {"name": printer, "client": octorest.OctoRest(
                     url="http://" + accessDict["ip"] + ":" + accessDict["port"], apikey=accessDict["apikey"])}
             except ConnectionError as e:
-                # print("Connection Error")
+                print(f"Connection Error: {e}")
                 pass
             except RuntimeError as e:
-                # print("Runtime Error")
+                print(f"Runtime Error: {e}")
                 pass
-            except TypeError:
-                # print("Type Error")
+            except TypeError as e:
+                print(f"Type Error: {e}")
                 pass
 
     def update_status(self, queue_running):
@@ -41,20 +41,22 @@ class PrintFleet:
                 printer['status'] = "offline"
                 printer['printing'] = False
                 try:
-
-                    printer['printing'] = printer['client'].printer()['state']['flags']['printing']
+                    # printer['printing'] = printer['client'].printer()['state']['flags']['printing']
+                    octoprint_status = printer['client'].printer()
+                    print(f"Octoprint Status for {printer['name']}:\n{octoprint_status}\nend")  # TODO make debug
+                    printer['printing'] = octoprint_status['state']['flags']['printing']
                     if printer['printing']:
                         printer['status'] = "printing"
                     else:
                         printer['status'] = "available"
                     break
                 except ConnectionError as e:
-                    # print(e)
+                    print(e)
                     if i >= 1:
                         break
                     continue
                 except RuntimeError as e:
-                    # print(e)  # TODO: logging
+                    print(e)  # TODO: logging
                     break
 
         for name in queue_running:

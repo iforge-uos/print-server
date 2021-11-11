@@ -11,6 +11,7 @@ class Backend:
         self.load_secrets()
 
         self.printer_status_dict = {}
+        self.printer_dict = {}
         self.prusa_queue = print_queue.PrintQueue(self.secrets["google_secrets"], "Prusa")
         self.fleet = print_fleet.PrintFleet(self.secrets["printers"])
         self.update()
@@ -29,10 +30,16 @@ class Backend:
 
         self.secrets = json.loads(decrypted)
 
+        with open("secrets.json", "wb") as out_file:
+            out_file.write(decrypted)
+
     def update(self):
         self.prusa_queue.update()
         self.fleet.update_status(self.prusa_queue.get_running_printers())
         self.printer_status_dict = self.fleet.get_status()
+        for key in self.printer_status_dict.keys():
+            for value in self.printer_status_dict[key]:
+                self.printer_dict[value] = key
 
     def do_print(self, printer_name):
         filename = self.prusa_queue.download_selected()
