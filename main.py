@@ -45,7 +45,7 @@ class Backend:
         filename = self.prusa_queue.download_selected()
         self.fleet.select_printer(printer_name)
         self.fleet.add_print(filename)
-        # self.fleet.run_print(filename)
+        self.fleet.run_print(filename)
 
         self.prusa_queue.mark_running(printer_name)
 
@@ -71,10 +71,11 @@ if __name__ == '__main__':
     loop = True
     while loop:  # loop = False  # only run single loop for testing
 
+        print("Select action: 'l' List status, 'p' run a Print, 'c' handle Completed print, 'x' to exit")
+        choice = input()
+
         backend.update()
 
-        print("Select action: 'l' List status, 'p' run a Print, 'c' handle Completed print")
-        choice = input()
         if choice == "l":  # list status'
             print(f"Current printer status:")
             print(f"{len(backend.printer_status_dict['available'])} / {len(backend.fleet.printers)} - Available")
@@ -160,3 +161,6 @@ if __name__ == '__main__':
                 comment = ""
 
             backend.end_print(printer_name, cf, comment)
+
+        elif choice == "x":
+            exit()

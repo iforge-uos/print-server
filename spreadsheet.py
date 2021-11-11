@@ -11,7 +11,7 @@ class Spreadsheet:
         self.scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
         self.creds = ServiceAccountCredentials.from_json_keyfile_dict(self.vars["tokens"]["serviceaccount"], self.scope)
         self.gspread_creds = gspread.authorize(self.creds)
-        self.queue_sheet = self.gspread_creds.open_by_key(self.vars["tokens"]["test_sheet"]).get_worksheet(1)
+        self.queue_sheet = self.gspread_creds.open_by_key(self.vars["tokens"]["sheet"]).get_worksheet(1)
         self.dataframe = None
         self.update_data()
 
@@ -23,7 +23,14 @@ class Spreadsheet:
         return
 
     def update_data(self):
-        self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA"))
+        while True:
+            try:
+                self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA"))
+                break
+            except gspread.exceptions.APIError as e:
+                # temporary error, keep trying
+                print(f"APIError: {e}\nRetrying every 5 seconds")
+                time.sleep(5)
 
         # example usage
         # print(self.dataframe)
