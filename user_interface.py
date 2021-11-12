@@ -6,66 +6,6 @@ import datetime
 MASTER_PASSCODE = "69420"
 
 
-def make_window(theme):
-    sg.theme(theme)
-
-    # Table Data
-    data = [["John", 10], ["Jen", 5]]
-    headings = ["Name", "Score"]
-
-    printer_layout = [[]]
-
-    main_layout = [[sg.Text('Header')],
-                   [sg.Frame("Printers", key="printer_frame", layout=printer_layout)],
-                   # [sg.Input(key='-INPUT-')],
-                   # [sg.Slider(orientation='h', key='-SKIDER-'),
-                   #  sg.Image(data=sg.DEFAULT_BASE64_LOADING_GIF, enable_events=True, key='-GIF-IMAGE-'),],
-                   # [sg.Checkbox('Checkbox', default=True, k='-CB-')],
-                   # [sg.Radio('Radio1', "RadioDemo", default=True, size=(10, 1), k='-R1-'),
-                   #  sg.Radio('Radio2', "RadioDemo", default=True, size=(10, 1), k='-R2-')],
-                   # [sg.Combo(values=('Combo 1', 'Combo 2', 'Combo 3'), default_value='Combo 1', readonly=True,
-                   #           k='-COMBO-'),
-                   #  sg.OptionMenu(values=('Option 1', 'Option 2', 'Option 3'), k='-OPTION MENU-'), ],
-                   # [sg.Spin([i for i in range(1, 11)], initial_value=10, k='-SPIN-'), sg.Text('Spin')],
-                   # [sg.Multiline(
-                   #     'Demo of a Multi-Line Text Element!\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nYou get the point.',
-                   #     size=(45, 5), k='-MLINE-')],
-                   # [sg.Button('Button'), sg.Button('Popup'),
-                   #  sg.Button(image_data=sg.DEFAULT_BASE64_ICON, key='-LOGO-')]
-                   ]
-
-    finish_layout = [[sg.T('Anything that you would use for asthetics is in this tab!')],
-                     [sg.Image(data=sg.DEFAULT_BASE64_ICON, k='-IMAGE-')],
-                     [sg.ProgressBar(1000, orientation='h', size=(20, 20), key='-PROGRESS BAR-'),
-                      sg.Button('Test Progress bar')]]
-
-    start_layout = [[sg.Text("Start print from queue")],
-                    [sg.Table(values=data, headings=headings, max_col_width=25,
-                              auto_size_columns=True,
-                              display_row_numbers=True,
-                              justification='right',
-                              # num_rows=2,
-                              key='-TABLE-',
-                              row_height=25)]]
-
-    maintenance_layout = [[sg.T('Printer Maintenance Options')],
-                          [sg.OptionMenu(values=("1", "2"), k='maintenance_printer_choice')],
-                          [sg.Image(data=sg.DEFAULT_BASE64_ICON, k='-IMAGE-')],
-                          [sg.ProgressBar(1000, orientation='h', size=(20, 20), key='-PROGRESS BAR-'),
-                           sg.Button('Test Progress bar')]]
-
-    layout = [[sg.Text('iForge 3D Print Automation System', size=(38, 1),
-                       justification='center', font=("Helvetica", 16),
-                       key='-TEXT HEADING-', enable_events=True)]]
-    layout += [[sg.TabGroup([[sg.Tab('Main', main_layout),
-                              sg.Tab('Finished Prints', finish_layout),
-                              sg.Tab('Start Print', start_layout),
-                              sg.Tab('Maintenance', maintenance_layout)]],
-                            key='-TAB GROUP-')]]
-
-    return sg.Window('iForge Printer Control', layout)
-
-
 def main():
     sg.theme("Dark Blue 12")
 
