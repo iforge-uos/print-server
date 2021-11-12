@@ -20,9 +20,11 @@ class PrintFleet:
 
     def connect_clients(self):
         for printer, accessDict in self.printer_access.items():
+            self.printers[printer] = {"name": printer, "client": None}
             try:
-                self.printers[printer] = {"name": printer, "client": octorest.OctoRest(
-                    url="http://" + accessDict["ip"] + ":" + accessDict["port"], apikey=accessDict["apikey"])}
+                self.printers[printer]["client"] = \
+                    octorest.OctoRest(url="http://" + accessDict["ip"] + ":" + accessDict["port"],
+                                      apikey=accessDict["apikey"])
             except ConnectionError as e:
                 print(f"Connection Error: {e}")
                 pass
@@ -35,29 +37,42 @@ class PrintFleet:
 
     def update_status(self, queue_running):
         for printer in self.printers.values():
-            i = 0
-            while True:
-                i += 1
+            if not printer['client']:
                 printer['status'] = "offline"
                 printer['printing'] = False
-                try:
-                    # printer['printing'] = printer['client'].printer()['state']['flags']['printing']
-                    octoprint_status = printer['client'].printer()
-                    print(f"Octoprint Status for {printer['name']}:\n{octoprint_status}\nend")  # TODO make debug
-                    printer['printing'] = octoprint_status['state']['flags']['printing']
-                    if printer['printing']:
-                        printer['status'] = "printing"
-                    else:
-                        printer['status'] = "available"
-                    break
-                except ConnectionError as e:
-                    print(e)
-                    if i >= 1:
+                printer['details'] = {}
+            else:
+                i = 0
+                while True:
+                    i += 1
+                    printer['status'] = "offline"
+                    printer['printing'] = False
+                    printer['details'] = {}
+                    try:
+                        # printer['printing'] = printer['client'].printer()['state']['flags']['printing']
+                        status = printer['client'].printer()
+                        job_info = printer['client'].job_info()
+
+                        print(f"Octoprint Status for {printer['name']}:\n{status}\nend")  # TODO make debug
+
+                        printer['details'] = {'status': status,
+                                              'job_info': job_info
+                                              }
+
+                        printer['printing'] = status['state']['flags']['printing']
+                        if printer['printing']:
+                            printer['status'] = "printing"
+                        else:
+                            printer['status'] = "available"
                         break
-                    continue
-                except RuntimeError as e:
-                    print(e)  # TODO: logging
-                    break
+                    except ConnectionError as e:
+                        print(e)
+                        if i >= 1:
+                            break
+                        continue
+                    except RuntimeError as e:
+                        print(e)  # TODO: logging
+                        break
 
         for name in queue_running:
             try:

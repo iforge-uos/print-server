@@ -30,6 +30,7 @@ class Backend:
 
         self.secrets = json.loads(decrypted)
 
+        # TODO: For testing only
         with open("secrets.json", "wb") as out_file:
             out_file.write(decrypted)
 

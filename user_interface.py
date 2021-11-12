@@ -12,7 +12,10 @@ def make_window(theme):
     data = [["John", 10], ["Jen", 5]]
     headings = ["Name", "Score"]
 
+    printer_layout = [[]]
+
     main_layout = [[sg.Text('Header')],
+                   [sg.Frame("Printers", key="printer_frame", layout=printer_layout)],
                    # [sg.Input(key='-INPUT-')],
                    # [sg.Slider(orientation='h', key='-SKIDER-'),
                    #  sg.Image(data=sg.DEFAULT_BASE64_LOADING_GIF, enable_events=True, key='-GIF-IMAGE-'),],
@@ -62,25 +65,44 @@ def make_window(theme):
 
 
 def main():
-
     sg.theme("Dark Blue 12")
 
-    layout = [[sg.Text('iForge 3D Print Automation System', size=(38, 1), justification='center', font=("Helvetica", 16))]]
+    temp_layout = [[sg.Text('iForge 3D Print Automation System', justification='center', font=("Helvetica", 16))],
+                   [sg.Text('Loading...')]]
 
-    window = sg.Window('iForge Printer Control', layout)
-    window.read()
+    temp_window = sg.Window("Loading", temp_layout)
+    temp_window.finalize()
 
     backend = Backend()
-    print(backend.fleet.printers)
-    # print(backend.printer_status_dict)
-    # print(backend.printer_dict)
-    # print(backend.fleet.printers)
+
+    printer_layout = []
+    for printer in backend.fleet.printer_access.keys():
+        frame_layout = [[sg.T("Status:"), sg.T("Loading...", key=f"{printer} status")],
+                        [sg.T("Temperature:"), sg.T("Loading...", key=f"{printer} temps")]]
+        printer_layout.append([sg.Frame(printer, frame_layout, expand_x=True, key=f"{printer} frame")])
+
+    layout = [[sg.Text('iForge 3D Print Automation System', justification='center', font=("Helvetica", 16))],
+              [sg.Frame("Printers", key="printer_frame", layout=printer_layout, expand_x=True)],
+              ]
+
+    temp_window.close()
+
+    window = sg.Window('iForge Printer Control', layout)
+    window.finalize()
 
     # This is an Event Loop
     while True:
-        event, values = window.read(timeout=10000)
-        # backend.update()
+        event, values = window.read(timeout=1000)
+        backend.update()
         print(event)
+
+        for printer in backend.fleet.printer_access.keys():
+            window[f"{printer} status"].update(backend.fleet.printers[printer]['status'])
+            if backend.fleet.printers[printer]['status'] != "offline":
+                window[f"{printer} temps"].update(f"Bed: {backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual']}/{backend.fleet.printers[printer]['details']['status']['temperature']['bed']['target']}, Tool: {backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['actual']}/{backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['target']}")
+            else:
+                window[f"{printer} temps"].update("N/A")
+
         # keep an animation running so show things are happening
         # window['-GIF-IMAGE-'].update_animation(sg.DEFAULT_BASE64_LOADING_GIF, time_between_frames=100)
         if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
