@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 from main import Backend
 import interface_passcode
+import datetime
 
 MASTER_PASSCODE = "69420"
 
@@ -53,7 +54,8 @@ def make_window(theme):
                           [sg.ProgressBar(1000, orientation='h', size=(20, 20), key='-PROGRESS BAR-'),
                            sg.Button('Test Progress bar')]]
 
-    layout = [[sg.Text('iForge 3D Print Automation System', size=(38, 1), justification='center', font=("Helvetica", 16),
+    layout = [[sg.Text('iForge 3D Print Automation System', size=(38, 1),
+                       justification='center', font=("Helvetica", 16),
                        key='-TEXT HEADING-', enable_events=True)]]
     layout += [[sg.TabGroup([[sg.Tab('Main', main_layout),
                               sg.Tab('Finished Prints', finish_layout),
@@ -77,11 +79,27 @@ def main():
 
     printer_layout = []
     for printer in backend.fleet.printer_access.keys():
-        frame_layout = [[sg.T("Status:"), sg.T("Loading...", key=f"{printer} status")],
-                        [sg.T("Temperature:"), sg.T("Loading...", key=f"{printer} temps")]]
+        frame_layout = [[sg.T("Status:", size=(10, 1), justification="right"),
+                         sg.T("Loading...", key=f"{printer} status", size=(38, 1))
+                         ],
+                        [sg.T("Temperature:", size=(10, 1), justification="right"),
+                         sg.T("Loading...", key=f"{printer} temps", size=(38, 1))
+                         ],
+                        [sg.T("Job:", size=(10, 1), justification="right"),
+                         sg.T("Loading...", key=f"{printer} job", size=(38, 1))
+                         ],
+                        [sg.T("Progress:", size=(10, 1), justification="right"),
+                         sg.T("Loading...", key=f"{printer} progress", size=(38, 1))
+                         ],
+                        [sg.B("Start Print", key=f"{printer} start", disabled=True, size=(16, 1)),
+                         sg.B("Finish Print", key=f"{printer} finish", disabled=True, size=(16, 1)),
+                         sg.B("Settings", key=f"{printer} settings", disabled=True, size=(16, 1))
+                         ]
+                        ]
         printer_layout.append([sg.Frame(printer, frame_layout, expand_x=True, key=f"{printer} frame")])
 
     layout = [[sg.Text('iForge 3D Print Automation System', justification='center', font=("Helvetica", 16))],
+              [sg.B('Exit')],
               [sg.Frame("Printers", key="printer_frame", layout=printer_layout, expand_x=True)],
               ]
 
@@ -94,59 +112,30 @@ def main():
     while True:
         event, values = window.read(timeout=1000)
         backend.update()
-        print(event)
+        # print(event)
 
         for printer in backend.fleet.printer_access.keys():
             window[f"{printer} status"].update(backend.fleet.printers[printer]['status'])
             if backend.fleet.printers[printer]['status'] != "offline":
-                window[f"{printer} temps"].update(f"Bed: {backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual']}/{backend.fleet.printers[printer]['details']['status']['temperature']['bed']['target']}, Tool: {backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['actual']}/{backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['target']}")
+                print(backend.fleet.printers[printer])
+                window[f"{printer} temps"].update(
+                    f"Bed: {backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual']}/{backend.fleet.printers[printer]['details']['status']['temperature']['bed']['target']}, Tool: {backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['actual']}/{backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['target']}")
+                window[f"{printer} job"].update(
+                    f"{backend.fleet.printers[printer]['details']['job_info']['job']['file']['name']}")
+                window[f"{printer} progress"].update(
+                    f"{backend.fleet.printers[printer]['details']['job_info']['progress']['completion'] or 0:.1f}% complete, {str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['job_info']['progress']['printTimeLeft'] or 0))} remaining")
             else:
                 window[f"{printer} temps"].update("N/A")
+                window[f"{printer} job"].update("N/A")
 
-        # keep an animation running so show things are happening
-        # window['-GIF-IMAGE-'].update_animation(sg.DEFAULT_BASE64_LOADING_GIF, time_between_frames=100)
-        if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
-            print('Event = ', event)
-            print('Values Dictionary (key = value):')
-            for key in values:
-                print(key, ' = ', values[key])
+        # if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
+        #     print('Event = ', event)
+        #     print('Values Dictionary (key = value):')
+        #     for key in values:
+        #         print(key, ' = ', values[key])
         if event in (None, 'Exit'):
             print("[LOG] Clicked Exit!")
             break
-        elif event == 'About':
-            print("[LOG] Clicked About!")
-            sg.popup('PySimpleGUI Demo All Elements',
-                     'Right click anywhere to see right click menu',
-                     'Visit each of the tabs to see available elements',
-                     'Output of event and values can be see in Output tab',
-                     'The event and values dictionary is printed after every event')
-        elif event == 'Popup':
-            print("[LOG] Clicked Popup Button!")
-            sg.popup("You pressed a button!")
-            print("[LOG] Dismissing Popup!")
-        elif event == 'Test Progress bar':
-            print("[LOG] Clicked Test Progress Bar!")
-            progress_bar = window['-PROGRESS BAR-']
-            for i in range(1000):
-                print("[LOG] Updating progress bar by 1 step (" + str(i) + ")")
-                progress_bar.UpdateBar(i + 1)
-            print("[LOG] Progress bar complete!")
-        elif event == "Open Folder":
-            print("[LOG] Clicked Open Folder!")
-            folder_or_file = sg.popup_get_folder('Choose your folder')
-            sg.popup("You chose: " + str(folder_or_file))
-            print("[LOG] User chose folder: " + str(folder_or_file))
-        elif event == "Open File":
-            print("[LOG] Clicked Open File!")
-            folder_or_file = sg.popup_get_file('Choose your file')
-            sg.popup("You chose: " + str(folder_or_file))
-            print("[LOG] User chose file: " + str(folder_or_file))
-        elif event == "Set Theme":
-            print("[LOG] Clicked Set Theme!")
-            theme_chosen = values['-THEME LISTBOX-'][0]
-            print("[LOG] User Chose Theme: " + str(theme_chosen))
-            window.close()
-            window = make_window(theme_chosen)
 
     window.close()
 

@@ -20,7 +20,7 @@ class PrintFleet:
 
     def connect_clients(self):
         for printer, accessDict in self.printer_access.items():
-            self.printers[printer] = {"name": printer, "client": None}
+            self.printers[printer] = {"name": printer, "client": None, "print_job": None, 'status': 'offline', 'printing': False, 'details': {}}
             try:
                 self.printers[printer]["client"] = \
                     octorest.OctoRest(url="http://" + accessDict["ip"] + ":" + accessDict["port"],
@@ -53,7 +53,7 @@ class PrintFleet:
                         status = printer['client'].printer()
                         job_info = printer['client'].job_info()
 
-                        print(f"Octoprint Status for {printer['name']}:\n{status}\nend")  # TODO make debug
+                        # print(f"Octoprint Status for {printer['name']}:\n{status}\nend")  # TODO make debug
 
                         printer['details'] = {'status': status,
                                               'job_info': job_info
@@ -66,12 +66,12 @@ class PrintFleet:
                             printer['status'] = "available"
                         break
                     except ConnectionError as e:
-                        print(e)
+                        # print(e)
                         if i >= 1:
                             break
                         continue
                     except RuntimeError as e:
-                        print(e)  # TODO: logging
+                        # print(e)  # TODO: logging
                         break
 
         for name in queue_running:
