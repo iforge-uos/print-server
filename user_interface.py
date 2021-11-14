@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-from main import Backend
+from backend import Backend
 import interface_passcode
 import datetime
 
