@@ -3,6 +3,7 @@ import pandas as pd
 from oauth2client.service_account import ServiceAccountCredentials
 from cryptography.fernet import Fernet
 import json
+import time
 
 
 class Spreadsheet:
@@ -11,7 +12,7 @@ class Spreadsheet:
         self.scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
         self.creds = ServiceAccountCredentials.from_json_keyfile_dict(self.vars["tokens"]["serviceaccount"], self.scope)
         self.gspread_creds = gspread.authorize(self.creds)
-        self.queue_sheet = self.gspread_creds.open_by_key(self.vars["tokens"]["test_sheet"]).get_worksheet(1)
+        self.queue_sheet = self.gspread_creds.open_by_key(self.vars["tokens"]["sheet"]).get_worksheet(1)
         self.dataframe = None
         self.update_data()
 
@@ -25,7 +26,7 @@ class Spreadsheet:
     def update_data(self):
         while True:
             try:
-                self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA"))
+                self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA", head=3))
                 break
             except gspread.exceptions.APIError as e:
                 # temporary error, keep trying
@@ -71,7 +72,7 @@ class Spreadsheet:
         if len(row) != 1:
             raise TypeError(f"Multiple rows match: {data.loc[:, 'Unique ID']}")
 
-        row = row[0] + 2  # +2 for header & zero-indexing,
+        row = row[0] + 4  # +4 for header & zero-indexing,
 
         # values = []
         # for val in data.values.tolist():  # elementwise convert numpy numbers to standard numbers
