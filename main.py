@@ -13,7 +13,7 @@ def get_number_in_list(elem_list):
         n = input()
         try:
             n = int(n)
-        except TypeError:
+        except (ValueError, TypeError):
             if n == "c":
                 return -1
 
@@ -68,7 +68,7 @@ def finish_print(backend):
 
     print("Finished printers:")
 
-    n = get_number_in_list(backend.printer_status_dict['available'])
+    n = get_number_in_list(backend.printer_status_dict['finished'])
     if n == -1:
         return
 
