@@ -47,81 +47,45 @@ def print_print(backend):
                             f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
                             f"\t{job[7]}"
                             for job in joblist.loc[:].values.tolist()])
-
     if n == -1:
         return
-    #
-    # for i, job in enumerate(joblist.loc[:].values.tolist()):
-    #     print(f"{i}.\t{job[0]:20s}\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}\t{job[7]}")
-    #
-    # # select a print by number
-    # print("\nEnter number to select:")
-    # n = None
-    # while True:
-    #     n = input()
-    #     try:
-    #         n = int(n)
-    #     except TypeError:
-    #         pass
-    #
-    #     if n in list(range(0, joblist.shape[0])):
-    #         break
-    #     print(f"{n} not recognised, try again")
 
     backend.prusa_queue.select_by_id(joblist.loc[:, "Unique ID"].values[n])
 
     print("Available printers:")
 
     n = get_number_in_list(backend.printer_status_dict['available'])
-
     if n == -1:
         return
-
-    # for printer_name in backend.printer_status_dict['available']:
-    #     print(f" - {printer_name}")
-    #
-    # # select a selected by number
-    # print("\nEnter printer name to select:")
-    # while True:
-    #     printer_name = input()
-    #     if printer_name in backend.printer_status_dict['available']:
-    #         break
-    #     print(f"{printer_name} not recognised, try again")
 
     backend.do_print(backend.printer_status_dict['available'][n])
 
 
 def finish_print(backend):
-    if len(backend.printer_status_dict["finished"]) == 0:
+    if len(backend.printer_status_dict['finished']) == 0:
         print("No printers finished, try again later")
         return
 
     print("Finished printers:")
-    for printer_name in backend.printer_status_dict['finished']:
-        print(f" - {printer_name}")
 
-    # select a selected by number
-    print("\nEnter printer name to select:")
-    while True:
-        printer_name = input()
-        if printer_name in backend.printer_status_dict['finished']:
-            break
-        print(f"{printer_name} not recognised, try again")
+    n = get_number_in_list(backend.printer_status_dict['available'])
+    if n == -1:
+        return
 
     print("Was the print successful? [Complete/Failed]")
     while True:
-        cf = input()
-        if cf in ['Complete', 'Failed']:
+        cf = input().upper()
+        if cf in ['COMPLETE', 'FAILED', 'C', 'F']:
             break
         print(f"{cf} not recognised, try again")
 
-    if cf == "Failed":
-        print(f"Please enter failure comment for printer: {printer_name}")
+    if cf in ["FAILED", "F"]:
+        print(f"Please enter failure comment for printer: {backend.printer_status_dict['finished'][n]}")
         comment = input()
     else:
         comment = ""
 
-    backend.end_print(printer_name, cf, comment)
+    backend.end_print(backend.printer_status_dict['finished'][n], cf, comment)
 
 
 if __name__ == '__main__':
@@ -138,18 +102,18 @@ if __name__ == '__main__':
     while loop:  # loop = False  # only run single loop for testing
 
         print("Select action: 'l' List status, 'p' run a Print, 'f' handle Completed print, 'x' to exit")
-        choice = input()
+        choice = input().upper()
 
         backend.update()
 
-        if choice == "l":  # list status'
+        if choice == "L":  # list status'
             list_printers(backend)
 
-        elif choice == "p":  # select print and printer
+        elif choice == "P":  # select print and printer
             print_print(backend)
 
-        elif choice == "f":  # unhandled, will select "finished" print and mark complete/fail
+        elif choice == "F":  # unhandled, will select "finished" print and mark complete/fail
             finish_print(backend)
 
-        elif choice in ["x", "q"]:
+        elif choice in ["X", "Q"]:
             exit()
