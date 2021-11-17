@@ -80,9 +80,11 @@ def finish_print(backend):
         print(f"{cf} not recognised, try again")
 
     if cf in ["FAILED", "F"]:
+        cf = "Failed"
         print(f"Please enter failure comment for printer: {backend.printer_status_dict['finished'][n]}")
         comment = input()
     else:
+        cf = "Complete"
         comment = ""
 
     backend.end_print(backend.printer_status_dict['finished'][n], cf, comment)
