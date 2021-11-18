@@ -54,6 +54,5 @@ class Backend:
         print(f"Cancelling: {printer_name}, Re-Queue: {requeue}")
         self.fleet.select_printer(printer_name)
         self.fleet.cancel_print()
-        time.sleep(2)
         self.fleet.clear_files()
         self.prusa_queue.mark_cancel(printer_name, requeue, comment)
