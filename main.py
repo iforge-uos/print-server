@@ -66,7 +66,7 @@ def finish_print(backend):
         print("No printers finished, try again later")
         return
 
-    print("Finished printers:")
+    print("Select printer to process:")
 
     n = get_number_in_list(backend.printer_status_dict['finished'])
     if n == -1:
@@ -90,6 +90,36 @@ def finish_print(backend):
     backend.end_print(backend.printer_status_dict['finished'][n], cf, comment)
 
 
+def cancel_print(backend):
+    if len(backend.printer_status_dict["printing"]) == 0:
+        print("No available printers, try again later")
+        return
+
+    print("Select printer to cancel:")
+
+    n = get_number_in_list(backend.printer_status_dict['printing'])
+    if n == -1:
+        return
+
+    print("Re-Queue the print? [Yes/No]")
+    while True:
+        yn = input().upper()
+        if yn in ['YES', 'Y', 'NO', 'N']:
+            break
+        print(f"{yn} not recognised, try again")
+
+    if yn in ['YES', 'Y']:
+        requeue = True
+    else:
+        requeue = False
+
+    comment = ""
+    if not requeue:
+        print(f"Please enter failure comment for printer: {backend.printer_status_dict['printing'][n]}")
+        comment = input()
+
+    backend.cancel_print(backend.printer_status_dict['printing'][n], requeue, comment)
+
 if __name__ == '__main__':
     # parser = argparse.ArgumentParser(description='iForge 3D Print Queue Management System')
     # parser.add_argument('secrets_key', type=str,
@@ -103,7 +133,11 @@ if __name__ == '__main__':
     loop = True
     while loop:  # loop = False  # only run single loop for testing
 
-        print("Select action: 'l' List status, 'p' run a Print, 'f' handle Completed print, 'x' to exit")
+        print("Select action: 'l' List status, "
+              "'p' run a Print, "
+              "'f' handle Completed print, "
+              "'c' to Cancel print, "
+              "'x' to exit")
         choice = input().upper()
 
         backend.update()
@@ -116,6 +150,9 @@ if __name__ == '__main__':
 
         elif choice == "F":  # unhandled, will select "finished" print and mark complete/fail
             finish_print(backend)
+
+        elif choice == "C":  # unhandled, will select "finished" print and mark complete/fail
+            cancel_print(backend)
 
         elif choice in ["X", "Q"]:
             exit()

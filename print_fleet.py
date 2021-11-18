@@ -1,6 +1,7 @@
 import octorest
 from requests.exceptions import ConnectionError
 import json
+import time
 
 
 class PrintFleet:
@@ -78,8 +79,18 @@ class PrintFleet:
     def add_print(self, filename, path=""):
         self.selected_printer["client"].upload(filename, path=path)
 
-    def run_print(self, filename):
-        self.selected_printer["client"].select(filename, print=True)
+    def select_print(self, filename):
+        self.selected_printer["client"].select(filename, print=False)
+
+    def run_print(self):
+        self.selected_printer["client"].start()
+
+    def cancel_print(self):
+        print(self.selected_printer["client"].printer()['state'])
+        while self.selected_printer["client"].printer()['state']['flags']['cancelling']:
+            time.sleep(0.5)
+        time.sleep(0.5)
+        self.selected_printer["client"].cancel()
 
     def clear_files(self):
         for file in self.selected_printer["client"].files()["files"]:
@@ -124,27 +135,3 @@ class PrintFleet:
     # def toggle(self):
     #     self.client.pause()
 
-
-if __name__ == '__main__':
-    test = 0
-
-    file = open("secrets.json")
-    secret_vars = json.load(file)
-
-    with PrintFleet(secret_vars["printers"]) as fleet:
-        fleet.printers
-        # fleet.add_print("testSquare.gcode")
-        # fleet.run_print("testSquare.gcode")
-        # error = True
-        # while(error):
-        #     try:
-        #         fleet.clear_files()
-        #         error = False
-        #         print("File deleted")
-        #     except:
-        #         pass
-
-        # with PrintFleet("TestBench", vars["printer"]["ip"], vars["printer"]["apikey"]) as printer:
-        #     print(printer.connect())
-        #     printer.file_names()
-        #     print(printer.get_printer_info())
