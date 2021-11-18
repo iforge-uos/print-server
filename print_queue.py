@@ -63,3 +63,18 @@ class PrintQueue:
         self.selected.loc[:, "Status"] = result
         self.selected.loc[:, "Notes"] = comment
         self.print_sheet.set_row(self.selected)
+
+    def mark_cancel(self, printer_name, requeue, comment):
+        self.select_by_printer(printer_name)
+
+        self.selected.loc[:, "Printer"] = ""
+        self.selected.loc[:, "Printed colour"] = ""
+
+        if requeue:
+            self.selected.loc[:, "Status"] = "Queued"
+            self.selected.loc[:, "Notes"] = "re-queued"
+        else:
+            self.selected.loc[:, "Status"] = "Failed"
+            self.selected.loc[:, "Notes"] = comment
+
+        self.print_sheet.set_row(self.selected)
