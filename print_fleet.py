@@ -21,9 +21,10 @@ class PrintFleet:
 
     def connect_clients(self):
         for printer, accessDict in self.printer_access.items():
+            self.printers[printer] = {"name": printer}
             try:
-                self.printers[printer] = {"name": printer, "client": octorest.OctoRest(
-                    url="http://" + accessDict["ip"] + ":" + accessDict["port"], apikey=accessDict["apikey"])}
+                self.printers[printer]["client"] = octorest.OctoRest(
+                    url="http://" + accessDict["ip"] + ":" + accessDict["port"], apikey=accessDict["apikey"])
             except ConnectionError as e:
                 # print("Connection Error")
                 pass
@@ -41,22 +42,28 @@ class PrintFleet:
                 i += 1
                 printer['status'] = "offline"
                 printer['printing'] = False
+                # print(f"Status fetch attempt: {printer['name']}, #{i}")
                 try:
+                    if printer['client'] != "OFFLINE":
+                        printer['printing'] = printer['client'].printer()['state']['flags']['printing']
 
-                    printer['printing'] = printer['client'].printer()['state']['flags']['printing']
-                    if printer['printing']:
-                        printer['status'] = "printing"
-                    else:
-                        printer['status'] = "available"
-                    break
-                except ConnectionError as e:
-                    # print(e)
-                    if i >= 1:
+                        if printer['printing']:
+                            printer['status'] = "printing"
+                        else:
+                            printer['status'] = "available"
                         break
-                    continue
+                except KeyError:
+                    printer['client'] = "OFFLINE"
+                except ConnectionError as e:
+                    # print(e)  # TODO: logging
+                    break
                 except RuntimeError as e:
                     # print(e)  # TODO: logging
                     break
+
+                if i >= 3:
+                    break
+                continue
 
         for name in queue_running:
             try:
