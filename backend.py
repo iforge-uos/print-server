@@ -11,7 +11,9 @@ class Backend:
 
         self.printer_status_dict = {}
         self.prusa_queue = print_queue.PrintQueue(self.secrets["google_secrets"], "Prusa")
+        print("Performing initial printer connection, this may take some time")
         self.fleet = print_fleet.PrintFleet(self.secrets["printers"])
+        print("Complete")
         self.update()
 
     def load_secrets(self):

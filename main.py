@@ -133,7 +133,7 @@ if __name__ == '__main__':
     loop = True
     while loop:  # loop = False  # only run single loop for testing
 
-        print("Select action:\n'l' List status\n"
+        print("\nSelect action:\n'l' List status\n"
               "'p' run a Print\n"
               "'f' handle Completed print\n"
               "'c' to Cancel print\n"
