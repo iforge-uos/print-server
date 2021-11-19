@@ -133,10 +133,10 @@ if __name__ == '__main__':
     loop = True
     while loop:  # loop = False  # only run single loop for testing
 
-        print("Select action: 'l' List status, "
-              "'p' run a Print, "
-              "'f' handle Completed print, "
-              "'c' to Cancel print, "
+        print("Select action:\n'l' List status\n"
+              "'p' run a Print\n"
+              "'f' handle Completed print\n"
+              "'c' to Cancel print\n"
               "'x' to exit")
         choice = input().upper()
 
