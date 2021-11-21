@@ -1,6 +1,7 @@
 import print_fleet
 import print_queue
 import json
+import time
 from cryptography.fernet import Fernet
 
 
@@ -12,7 +13,9 @@ class Backend:
         self.printer_status_dict = {}
         self.printer_dict = {}
         self.prusa_queue = print_queue.PrintQueue(self.secrets["google_secrets"], "Prusa")
+        print("Performing initial printer connection, this may take some time")
         self.fleet = print_fleet.PrintFleet(self.secrets["printers"])
+        print("Complete")
         self.update()
 
     def load_secrets(self):
@@ -45,7 +48,8 @@ class Backend:
         filename = self.prusa_queue.download_selected()
         self.fleet.select_printer(printer_name)
         self.fleet.add_print(filename)
-        self.fleet.run_print(filename)
+        self.fleet.select_print(filename)
+        self.fleet.run_print()
 
         self.prusa_queue.mark_running(printer_name)
 
@@ -56,3 +60,10 @@ class Backend:
         self.prusa_queue.mark_result(printer_name, result, comment)
         self.fleet.select_printer(printer_name)
         self.fleet.clear_files()
+
+    def cancel_print(self, printer_name, requeue, comment):
+        print(f"Cancelling: {printer_name}, Re-Queue: {requeue}")
+        self.fleet.select_printer(printer_name)
+        self.fleet.cancel_print()
+        self.fleet.clear_files()
+        self.prusa_queue.mark_cancel(printer_name, requeue, comment)

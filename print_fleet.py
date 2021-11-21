@@ -1,6 +1,6 @@
 import octorest
 from requests.exceptions import ConnectionError
-import json
+import time
 
 
 class PrintFleet:
@@ -11,6 +11,9 @@ class PrintFleet:
 
         self.printers = {}
         self.connect_clients()
+
+        self.prev_reconnect_time = time.time()
+        self.offline_timeout = 30
 
     def __enter__(self):
         return self
@@ -26,13 +29,13 @@ class PrintFleet:
                     octorest.OctoRest(url="http://" + accessDict["ip"] + ":" + accessDict["port"],
                                       apikey=accessDict["apikey"])
             except ConnectionError as e:
-                print(f"Connection Error: {e}")
+                # print("Connection Error")
                 pass
             except RuntimeError as e:
-                print(f"Runtime Error: {e}")
+                # print("Runtime Error")
                 pass
-            except TypeError as e:
-                print(f"Type Error: {e}")
+            except TypeError:
+                # print("Type Error")
                 pass
 
     def update_status(self, queue_running):
@@ -49,29 +52,35 @@ class PrintFleet:
                     printer['printing'] = False
                     printer['details'] = {}
                     try:
-                        # printer['printing'] = printer['client'].printer()['state']['flags']['printing']
-                        status = printer['client'].printer()
-                        job_info = printer['client'].job_info()
-
-                        # print(f"Octoprint Status for {printer['name']}:\n{status}\nend")  # TODO make debug
-
-                        printer['details'] = {'status': status,
-                                              'job_info': job_info
-                                              }
-
-                        printer['printing'] = status['state']['flags']['printing']
-                        if printer['printing']:
-                            printer['status'] = "printing"
+                        if not printer['client']:
+                            tnow = time.time()
+                            if tnow - self.prev_reconnect_time > self.offline_timeout:
+                                print("Refreshing available printers, please wait")
+                                self.connect_clients()
+                                self.prev_reconnect_time = tnow
                         else:
-                            printer['status'] = "available"
-                        break
-                    except ConnectionError as e:
-                        # print(e)
-                        if i >= 1:
+                            status = printer['client'].printer()
+                            job_info = printer['client'].job_info()
+
+                            # print(f"Octoprint Status for {printer['name']}:\n{status}\nend")  # TODO make debug
+
+                            printer['details'] = {'status': status,
+                                                  'job_info': job_info
+                                                  }
+
+                            printer['printing'] = status['state']['flags']['printing']
+                            if printer['printing']:
+                                printer['status'] = "printing"
+                            else:
+                                printer['status'] = "available"
                             break
-                        continue
+                    except ConnectionError as e:
+                        # print(e)  # TODO: logging
+                        break
                     except RuntimeError as e:
                         # print(e)  # TODO: logging
+                        break
+                    if i >= 3:
                         break
 
         for name in queue_running:
@@ -95,8 +104,18 @@ class PrintFleet:
     def add_print(self, filename, path=""):
         self.selected_printer["client"].upload(filename, path=path)
 
-    def run_print(self, filename):
-        self.selected_printer["client"].select(filename, print=True)
+    def select_print(self, filename):
+        self.selected_printer["client"].select(filename, print=False)
+
+    def run_print(self):
+        self.selected_printer["client"].start()
+
+    def cancel_print(self):
+        print(self.selected_printer["client"].printer()['state'])
+        self.selected_printer["client"].cancel()
+        while self.selected_printer["client"].printer()['state']['flags']['cancelling']:
+            time.sleep(0.5)
+        time.sleep(0.5)
 
     def clear_files(self):
         for file in self.selected_printer["client"].files()["files"]:
@@ -108,6 +127,7 @@ class PrintFleet:
     def select_printer(self, name):
         self.selected_printer = self.printers[name]
 
+    # # TODO: Ad-hoc handling
     # def file_names(self):
     #     """Retrieves the G-code file names from the
     #     OctoPrint server and returns a string message listing the
@@ -120,48 +140,3 @@ class PrintFleet:
     #     for i, k in enumerate(self.client.files()['files']):
     #         message += f"{i}.\t{k['name']}\n"
     #     print(message)
-    #
-    # def get_printer_info(self):
-    #     try:
-    #         message = ""
-    #         message += str(self.client.version) + "\n"
-    #         message += str(self.client.job_info()) + "\n"
-    #         printing = self.client.printer()['state']['flags']['printing']
-    #         if printing:
-    #             message += "Currently printing!\n"
-    #         else:
-    #             message += "Not currently printing...\n"
-    #         return message
-    #     except Exception as e:
-    #         print(e)
-    #
-    # def home(self):
-    #     self.client.home()
-    #
-    # def toggle(self):
-    #     self.client.pause()
-
-
-if __name__ == '__main__':
-    test = 0
-
-    file = open("secrets.json")
-    secret_vars = json.load(file)
-
-    with PrintFleet(secret_vars["printers"]) as fleet:
-        fleet.printers
-        # fleet.add_print("testSquare.gcode")
-        # fleet.run_print("testSquare.gcode")
-        # error = True
-        # while(error):
-        #     try:
-        #         fleet.clear_files()
-        #         error = False
-        #         print("File deleted")
-        #     except:
-        #         pass
-
-        # with PrintFleet("TestBench", vars["printer"]["ip"], vars["printer"]["apikey"]) as printer:
-        #     print(printer.connect())
-        #     printer.file_names()
-        #     print(printer.get_printer_info())
