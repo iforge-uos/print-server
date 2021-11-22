@@ -1,9 +1,13 @@
 import PySimpleGUI as sg
 from backend import Backend
 import interface_passcode
+import start_print_ui
 import datetime
+import time
 
 MASTER_PASSCODE = "69420"
+
+TIMEOUT = 10
 
 PRINTER_COLS = 2
 
@@ -14,8 +18,11 @@ def main():
     temp_layout = [[sg.Text('iForge 3D Print Automation System', justification='center', font=("Helvetica", 16))],
                    [sg.Text('Loading...')]]
 
-    temp_window = sg.Window("Loading", temp_layout)
+    temp_window = sg.Window("Loading",
+                            temp_layout,
+                            no_titlebar=True)
     temp_window.finalize()
+    temp_window.maximize()
 
     backend = Backend()
 
@@ -46,19 +53,26 @@ def main():
             printer_layout.append([sg.Frame(printer, frame_layout, key=f"{printer} frame")])
             col_counter = 1
 
-    layout = [[sg.Text('iForge 3D Print Automation System', justification='center', font=("Helvetica", 16), expand_x=True)],
-              [sg.Frame("Printers", key="printer_frame", layout=printer_layout, expand_x=True)],
-              [sg.B("Start Print", key=f"start", disabled=True, size=(16, 1)),
-               sg.B("Finish Print", key=f"finish", disabled=True, size=(16, 1)),
-               sg.B("Settings", key=f"settings", disabled=True, size=(16, 1)),
-               sg.B('Exit', size=(16, 1)),
-               ],
-              ]
+    layout = [
+        [sg.Text('iForge 3D Print Automation System', justification='center', font=("Helvetica", 16), expand_x=True)],
+        [sg.Frame("Printers", key="printer_frame", layout=printer_layout, expand_x=True)],
+        [sg.B("Start Print", key=f"start", disabled=False, size=(16, 1)),
+         sg.B("Finish Print", key=f"finish", disabled=True, size=(16, 1)),
+         sg.B("Settings", key=f"settings", disabled=True, size=(16, 1)),
+         sg.B('Exit', size=(16, 1)),
+         ],
+    ]
 
     temp_window.close()
 
-    window = sg.Window('iForge Printer Control', layout, element_justification="center")
+    window = sg.Window('iForge Printer Control',
+                       layout,
+                       element_justification="center",
+                       no_titlebar=True)
     window.finalize()
+    window.maximize()
+
+    logout_timer = time.time()
 
     # This is an Event Loop
     while True:
@@ -66,10 +80,15 @@ def main():
         backend.update()
         # print(event)
 
+        if event in (None, 'Exit'):
+            print("[LOG] Clicked Exit!")
+            break
+
+        # No-event update
         for printer in backend.fleet.printer_access.keys():
             window[f"{printer} status"].update(backend.fleet.printers[printer]['status'])
             if backend.fleet.printers[printer]['status'] != "offline":
-                print(backend.fleet.printers[printer])
+                # print(backend.fleet.printers[printer])
                 window[f"{printer} temps"].update(
                     f"Bed: {backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual']}/{backend.fleet.printers[printer]['details']['status']['temperature']['bed']['target']}, Tool: {backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['actual']}/{backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['target']}")
                 window[f"{printer} job"].update(
@@ -80,14 +99,22 @@ def main():
                 window[f"{printer} temps"].update("N/A")
                 window[f"{printer} job"].update("N/A")
 
+        # Event handling
+        if event == "start":
+            start_print_ui.main(backend)
+
         # if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
         #     print('Event = ', event)
         #     print('Values Dictionary (key = value):')
         #     for key in values:
         #         print(key, ' = ', values[key])
-        if event in (None, 'Exit'):
-            print("[LOG] Clicked Exit!")
-            break
+
+        if event not in (sg.TIMEOUT_EVENT,):
+            logout_timer = time.time()
+        else:
+            if time.time() - logout_timer > TIMEOUT:
+                print("[LOG] Timed out! Eggo.")
+                break
 
     window.close()
 

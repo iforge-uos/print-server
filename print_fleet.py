@@ -85,7 +85,7 @@ class PrintFleet:
 
         for name in queue_running:
             try:
-                if not self.printers[name]['printing']:
+                if not self.printers[name]['printing'] and self.printers[name]['status'] != "offline":
                     self.printers[name]['status'] = "finished"
             except KeyError:
                 # not in printer list

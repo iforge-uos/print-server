@@ -27,8 +27,13 @@ def main(passcode, header="iForge 3D Print System"):
         [sg.Text("", key="-output_text-", font=("Helvetica", 12))]
     ]
 
-    window = sg.Window("Passcode", element_justification="center", enable_close_attempted_event=True)
+    window = sg.Window("Passcode",
+                       element_justification="center",
+                       enable_close_attempted_event=True,
+                       no_titlebar=True)
     window.layout(layout)
+    window.finalize()
+    window.maximize()
 
     while True:
         event, values = window.read()
