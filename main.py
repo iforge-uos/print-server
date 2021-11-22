@@ -1,5 +1,5 @@
-import backend
 import time
+from main_backend import Backend
 
 
 def get_number_in_list(elem_list):
@@ -120,6 +120,9 @@ def cancel_print(backend):
 
     backend.cancel_print(backend.printer_status_dict['printing'][n], requeue, comment)
 
+    print(f"Go and check {backend.printer_status_dict['printing'][n]} is clear and ready to print again.")
+    time.sleep(10)
+
 if __name__ == '__main__':
     # parser = argparse.ArgumentParser(description='iForge 3D Print Queue Management System')
     # parser.add_argument('secrets_key', type=str,
@@ -128,16 +131,16 @@ if __name__ == '__main__':
     # args = parser.parse_args()
     # secrets_key = args.secrets_key
 
-    backend = backend.Backend()
+    backend = Backend()
 
     loop = True
     while loop:  # loop = False  # only run single loop for testing
 
-        print("\nSelect action:\n'l' List status\n"
+        print("\nSelect action:\n"
+              "'l' List status\n"
               "'p' run a Print\n"
-              "'f' handle Completed print\n"
-              "'c' to Cancel print\n"
-              "'x' to exit")
+              "'f' handle Finished print (Complete/Fail)\n"
+              "'c' to Cancel print")
         choice = input().upper()
 
         backend.update()
@@ -154,5 +157,5 @@ if __name__ == '__main__':
         elif choice == "C":  # unhandled, will select "finished" print and mark complete/fail
             cancel_print(backend)
 
-        elif choice in ["X", "Q"]:
+        elif choice in ["Q"]:
             exit()
