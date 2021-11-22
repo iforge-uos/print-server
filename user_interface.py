@@ -7,7 +7,7 @@ import time
 
 MASTER_PASSCODE = "69420"
 
-TIMEOUT = 10
+TIMEOUT = 300
 
 PRINTER_COLS = 2
 
