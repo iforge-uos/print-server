@@ -13,6 +13,9 @@ class PrintFleet:
         self.printers = {}
         self.connect_clients()
 
+        self.prev_reconnect_time = time.time()
+        self.offline_timeout = 30
+
     def __enter__(self):
         return self
 
@@ -44,7 +47,13 @@ class PrintFleet:
                 printer['printing'] = False
                 # print(f"Status fetch attempt: {printer['name']}, #{i}")
                 try:
-                    if printer['client'] != "OFFLINE":
+                    if printer['client'] == "OFFLINE":
+                        tnow = time.time()
+                        if tnow - self.prev_reconnect_time > self.offline_timeout:
+                            print("Refreshing available printers, please wait")
+                            self.connect_clients()
+                            self.prev_reconnect_time = tnow
+                    else:
                         printer['printing'] = printer['client'].printer()['state']['flags']['printing']
 
                         if printer['printing']:
@@ -74,8 +83,12 @@ class PrintFleet:
                 continue
 
         for printer in self.printers.values():
-            if printer['name'] not in queue_running and printer['printing']:
-                printer['status'] = "invalid"
+            if printer['name'] not in queue_running:
+                try:
+                    if printer['printing']:
+                        printer['status'] = "invalid"
+                except:
+                    printer['status'] = "offline"
 
     def get_status(self):
         status_dict = {"available": [], "printing": [], "finished": [], "invalid": [], "offline": []}
