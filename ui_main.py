@@ -1,13 +1,13 @@
 import PySimpleGUI as sg
-from backend import Backend
-import interface_passcode
-import start_print_ui
+from main_backend import Backend
+import ui_passcode
+import ui_start_print
 import datetime
 import time
 
-MASTER_PASSCODE = "69420"
+MASTER_PASSCODE = "69420"  # TODO: actually set something in secrets xD
 
-TIMEOUT = 10
+TIMEOUT = 30
 
 PRINTER_COLS = 2
 

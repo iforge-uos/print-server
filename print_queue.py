@@ -1,5 +1,5 @@
-from spreadsheet import Spreadsheet
-from drive import Drive
+from google_spreadsheet import Spreadsheet
+from google_drive import Drive
 import pandas as pd
 import time
 
