@@ -34,8 +34,8 @@ def print_print(backend):
         print("No available printers, try again later")
         return
 
-    backend.prusa_queue.update()
-    joblist = backend.prusa_queue.get_jobs()
+    backend.ulti_queue.update()
+    joblist = backend.ulti_queue.get_jobs()
 
     if joblist.shape[0] == 0:  # if none free, wait and restart loop
         print("\nNo jobs queued, try again later")
@@ -50,7 +50,7 @@ def print_print(backend):
     if n == -1:
         return
 
-    backend.prusa_queue.select_by_id(joblist.loc[:, "Unique ID"].values[n])
+    backend.ulti_queue.select_by_id(joblist.loc[:, "Unique ID"].values[n])
 
     print("Available printers:")
 
