@@ -38,7 +38,8 @@ class PrintQueue:
 
     def select_by_printer(self, printer_name):
         self.update()
-        self.selected = self.print_sheet.dataframe.loc[self.print_sheet.dataframe.loc[:, "Printer"] == printer_name, :].copy()
+        filtered_queue = self.print_sheet.dataframe.loc[self.print_sheet.dataframe.loc[:, "Status"] == "Running", :]
+        self.selected = filtered_queue.loc[self.print_sheet.dataframe.loc[:, "Printer"] == printer_name, :].copy()
         if self.selected.shape[0] > 1:  # multiple instances of printer
             raise ValueError(f"Multiple {printer_name}s in dataset")
 
@@ -67,12 +68,11 @@ class PrintQueue:
     def mark_cancel(self, printer_name, requeue, comment):
         self.select_by_printer(printer_name)
 
-        self.selected.loc[:, "Printer"] = ""
-        self.selected.loc[:, "Printed colour"] = ""
-
         if requeue:
             self.selected.loc[:, "Status"] = "Queued"
             self.selected.loc[:, "Notes"] = "re-queued"
+            self.selected.loc[:, "Printer"] = ""
+            self.selected.loc[:, "Printed colour"] = ""
         else:
             self.selected.loc[:, "Status"] = "Failed"
             self.selected.loc[:, "Notes"] = comment
