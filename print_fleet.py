@@ -111,10 +111,12 @@ class PrintFleet:
         self.selected_printer["client"].start()
 
     def cancel_print(self):
-        print(self.selected_printer["client"].printer()['state'])
+        # print(self.selected_printer["client"].printer()['state'])
         self.selected_printer["client"].cancel()
+        t0 = time.time()
         while self.selected_printer["client"].printer()['state']['flags']['cancelling']:
             time.sleep(0.5)
+        print(f"Cancel of {self.selected_printer['name']} complete, time taken: {time.time()-t0:.1f}s")
         time.sleep(0.5)
 
     def clear_files(self):
