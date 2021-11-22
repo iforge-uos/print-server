@@ -1,5 +1,5 @@
-import backend
 import time
+from backend import Backend
 
 
 def get_number_in_list(elem_list):
@@ -128,7 +128,7 @@ if __name__ == '__main__':
     # args = parser.parse_args()
     # secrets_key = args.secrets_key
 
-    backend = backend.Backend()
+    backend = Backend()
 
     loop = True
     while loop:  # loop = False  # only run single loop for testing

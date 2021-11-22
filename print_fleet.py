@@ -1,6 +1,5 @@
 import octorest
 from requests.exceptions import ConnectionError
-import json
 import time
 
 
@@ -24,10 +23,11 @@ class PrintFleet:
 
     def connect_clients(self):
         for printer, accessDict in self.printer_access.items():
-            self.printers[printer] = {"name": printer}
+            self.printers[printer] = {"name": printer, "client": None, "print_job": None, 'status': 'offline', 'printing': False, 'details': {}}
             try:
-                self.printers[printer]["client"] = octorest.OctoRest(
-                    url="http://" + accessDict["ip"] + ":" + accessDict["port"], apikey=accessDict["apikey"])
+                self.printers[printer]["client"] = \
+                    octorest.OctoRest(url="http://" + accessDict["ip"] + ":" + accessDict["port"],
+                                      apikey=accessDict["apikey"])
             except ConnectionError as e:
                 # print("Connection Error")
                 pass
@@ -40,55 +40,60 @@ class PrintFleet:
 
     def update_status(self, queue_running):
         for printer in self.printers.values():
-            i = 0
-            while True:
-                i += 1
+            if not printer['client']:
                 printer['status'] = "offline"
                 printer['printing'] = False
-                # print(f"Status fetch attempt: {printer['name']}, #{i}")
-                try:
-                    if printer['client'] == "OFFLINE":
-                        tnow = time.time()
-                        if tnow - self.prev_reconnect_time > self.offline_timeout:
-                            print("Refreshing available printers, please wait")
-                            self.connect_clients()
-                            self.prev_reconnect_time = tnow
-                    else:
-                        printer['printing'] = printer['client'].printer()['state']['flags']['printing']
-
-                        if printer['printing']:
-                            printer['status'] = "printing"
+                printer['details'] = {}
+            else:
+                i = 0
+                while True:
+                    i += 1
+                    printer['status'] = "offline"
+                    printer['printing'] = False
+                    printer['details'] = {}
+                    try:
+                        if not printer['client']:
+                            tnow = time.time()
+                            if tnow - self.prev_reconnect_time > self.offline_timeout:
+                                print("Refreshing available printers, please wait")
+                                self.connect_clients()
+                                self.prev_reconnect_time = tnow
                         else:
-                            printer['status'] = "available"
-                        break
-                except KeyError:
-                    printer['client'] = "OFFLINE"
-                except ConnectionError as e:
-                    # print(e)  # TODO: logging
-                    break
-                except RuntimeError as e:
-                    # print(e)  # TODO: logging
-                    break
+                            status = printer['client'].printer()
+                            job_info = printer['client'].job_info()
 
-                if i >= 3:
-                    break
-                continue
+                            # print(f"Octoprint Status for {printer['name']}:\n{status}\nend")  # TODO make debug
+
+                            printer['details'] = {'status': status,
+                                                  'job_info': job_info
+                                                  }
+
+                            printer['printing'] = status['state']['flags']['printing']
+                            if printer['printing']:
+                                printer['status'] = "printing"
+                            else:
+                                printer['status'] = "available"
+                            break
+                    except ConnectionError as e:
+                        # print(e)  # TODO: logging
+                        break
+                    except RuntimeError as e:
+                        # print(e)  # TODO: logging
+                        break
+                    if i >= 3:
+                        break
 
         for name in queue_running:
             try:
-                if not self.printers[name]['printing']:
+                if not self.printers[name]['printing'] and self.printers[name]['status'] != "offline":
                     self.printers[name]['status'] = "finished"
             except KeyError:
                 # not in printer list
                 continue
 
         for printer in self.printers.values():
-            if printer['name'] not in queue_running:
-                try:
-                    if printer['printing']:
-                        printer['status'] = "invalid"
-                except:
-                    printer['status'] = "offline"
+            if printer['name'] not in queue_running and printer['printing']:
+                printer['status'] = "invalid"
 
     def get_status(self):
         status_dict = {"available": [], "printing": [], "finished": [], "invalid": [], "offline": []}
@@ -122,6 +127,7 @@ class PrintFleet:
     def select_printer(self, name):
         self.selected_printer = self.printers[name]
 
+    # # TODO: Ad-hoc handling
     # def file_names(self):
     #     """Retrieves the G-code file names from the
     #     OctoPrint server and returns a string message listing the
@@ -134,24 +140,3 @@ class PrintFleet:
     #     for i, k in enumerate(self.client.files()['files']):
     #         message += f"{i}.\t{k['name']}\n"
     #     print(message)
-    #
-    # def get_printer_info(self):
-    #     try:
-    #         message = ""
-    #         message += str(self.client.version) + "\n"
-    #         message += str(self.client.job_info()) + "\n"
-    #         printing = self.client.printer()['state']['flags']['printing']
-    #         if printing:
-    #             message += "Currently printing!\n"
-    #         else:
-    #             message += "Not currently printing...\n"
-    #         return message
-    #     except Exception as e:
-    #         print(e)
-    #
-    # def home(self):
-    #     self.client.home()
-    #
-    # def toggle(self):
-    #     self.client.pause()
-
