@@ -13,7 +13,7 @@ class PrintFleet:
         self.connect_clients()
 
         self.prev_reconnect_time = time.time()
-        self.offline_timeout = 30
+        self.offline_timeout = 300
 
     def __enter__(self):
         return self
@@ -40,48 +40,46 @@ class PrintFleet:
 
     def update_status(self, queue_running):
         for printer in self.printers.values():
-            if not printer['client']:
+            i = 0
+            while True:
+                i += 1
                 printer['status'] = "offline"
                 printer['printing'] = False
                 printer['details'] = {}
-            else:
-                i = 0
-                while True:
-                    i += 1
-                    printer['status'] = "offline"
-                    printer['printing'] = False
-                    printer['details'] = {}
-                    try:
-                        if not printer['client']:
-                            tnow = time.time()
-                            if tnow - self.prev_reconnect_time > self.offline_timeout:
-                                print("Refreshing available printers, please wait")
-                                self.connect_clients()
-                                self.prev_reconnect_time = tnow
+                try:
+                    if not printer['client']:
+                        tnow = time.time()
+                        if tnow - self.prev_reconnect_time > self.offline_timeout:
+                            print("Refreshing available printers, please wait")
+                            self.connect_clients()
+                            self.prev_reconnect_time = tnow
+
+                    if printer['client']:
+                        status = printer['client'].printer()
+                        job_info = printer['client'].job_info()
+
+                        # print(f"Octoprint Status for {printer['name']}:\n{status}\nend")  # TODO make debug
+
+                        printer['details'] = {'status': status,
+                                              'job_info': job_info
+                                              }
+
+                        printer['printing'] = status['state']['flags']['printing']
+                        if printer['printing']:
+                            printer['status'] = "printing"
                         else:
-                            status = printer['client'].printer()
-                            job_info = printer['client'].job_info()
-
-                            # print(f"Octoprint Status for {printer['name']}:\n{status}\nend")  # TODO make debug
-
-                            printer['details'] = {'status': status,
-                                                  'job_info': job_info
-                                                  }
-
-                            printer['printing'] = status['state']['flags']['printing']
-                            if printer['printing']:
-                                printer['status'] = "printing"
-                            else:
-                                printer['status'] = "available"
-                            break
-                    except ConnectionError as e:
-                        # print(e)  # TODO: logging
+                            printer['status'] = "available"
                         break
-                    except RuntimeError as e:
-                        # print(e)  # TODO: logging
-                        break
-                    if i >= 3:
-                        break
+
+                except ConnectionError as e:
+                    # print(e)  # TODO: logging
+                    break
+                except RuntimeError as e:
+                    # print(e)  # TODO: logging
+                    break
+
+                if i >= 3:
+                    break
 
         for name in queue_running:
             try:
