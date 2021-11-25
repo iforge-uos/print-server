@@ -51,8 +51,7 @@ class PrintQueue:
         return filename
 
     def mark_running(self, printer_name):
-        print(
-            f"Running: {self.selected.loc[:, 'Gcode Filename'].values[0].split(',')[1][1:-2]}, id: {self.selected.loc[:, 'Unique ID'].values[0]}, on: {printer_name}")
+        # print(f"Running: {self.selected.loc[:, 'Unique ID'].values[0]}.gcode, on: {printer_name}")
         self.selected.loc[:, "Status"] = "Running"
         self.selected.loc[:, "Printer"] = printer_name
         self.selected.loc[:, "Printed colour"] = "auto-print"
@@ -60,7 +59,7 @@ class PrintQueue:
 
     def mark_result(self, printer_name, result, comment=""):
         self.select_by_printer(printer_name)
-        print(f"Completing: {self.selected.loc[:, 'Gcode Filename'].values[0].split(',')[1][1:-2]}, id: {self.selected.loc[:, 'Unique ID'].values[0]}, on: {printer_name}")
+        # print(f"Completing: {self.selected.loc[:, 'Unique ID'].values[0]}.gcode, on: {printer_name}")
         self.selected.loc[:, "Status"] = result
         self.selected.loc[:, "Notes"] = comment
         self.print_sheet.set_row(self.selected)
