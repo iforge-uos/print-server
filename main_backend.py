@@ -12,7 +12,8 @@ class Backend:
 
         self.printer_status_dict = {}
         self.printer_dict = {}
-        self.prusa_queue = print_queue.PrintQueue(self.secrets["google_secrets"], "Prusa")
+        self.ulti_queue = print_queue.PrintQueue(self.secrets["google_secrets"], "Ultimaker")
+        # self.prusa_queue = print_queue.PrintQueue(self.secrets["google_secrets"], "Prusa")
         print("Performing initial printer connection, this may take some time")
         self.fleet = print_fleet.PrintFleet(self.secrets["printers"])
         print("Complete")
@@ -37,27 +38,27 @@ class Backend:
             out_file.write(decrypted)
 
     def update(self):
-        self.prusa_queue.update()
-        self.fleet.update_status(self.prusa_queue.get_running_printers())
+        self.ulti_queue.update()
+        self.fleet.update_status(self.ulti_queue.get_running_printers())
         self.printer_status_dict = self.fleet.get_status()
         for key in self.printer_status_dict.keys():
             for value in self.printer_status_dict[key]:
                 self.printer_dict[value] = key
 
     def do_print(self, printer_name):
-        filename = self.prusa_queue.download_selected()
+        filename = self.ulti_queue.download_selected()
         self.fleet.select_printer(printer_name)
         self.fleet.add_print(filename)
         self.fleet.select_print(filename)
         self.fleet.run_print()
 
-        self.prusa_queue.mark_running(printer_name)
+        self.ulti_queue.mark_running(printer_name)
 
     def end_print(self, printer_name, result, comment=""):
         # TODO: any other handling of finished prints?
         # TODO: extract completed filename from printer for mark complete? (more robust?)
         #   - currently only works by printer
-        self.prusa_queue.mark_result(printer_name, result, comment)
+        self.ulti_queue.mark_result(printer_name, result, comment)
         self.fleet.select_printer(printer_name)
         self.fleet.clear_files()
 
@@ -66,4 +67,4 @@ class Backend:
         self.fleet.select_printer(printer_name)
         self.fleet.cancel_print()
         self.fleet.clear_files()
-        self.prusa_queue.mark_cancel(printer_name, requeue, comment)
+        self.ulti_queue.mark_cancel(printer_name, requeue, comment)
