@@ -121,7 +121,7 @@ def main():
 
 if __name__ == '__main__':
     while True:
-        if interface_passcode.main(MASTER_PASSCODE):
+        if ui_passcode.main(MASTER_PASSCODE):
             main()
         else:
             break
