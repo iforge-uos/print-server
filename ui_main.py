@@ -7,7 +7,7 @@ import time
 
 MASTER_PASSCODE = "69420"  # TODO: actually set something in secrets xD
 
-TIMEOUT = 30
+TIMEOUT = 300
 
 PRINTER_COLS = 2
 
@@ -56,7 +56,7 @@ def main():
     layout = [
         [sg.Text('iForge 3D Print Automation System', justification='center', font=("Helvetica", 16), expand_x=True)],
         [sg.Frame("Printers", key="printer_frame", layout=printer_layout, expand_x=True)],
-        [sg.B("Start Print", key=f"start", disabled=False, size=(16, 1)),
+        [sg.B("Start Print", key=f"start", disabled=True, size=(16, 1)),
          sg.B("Finish Print", key=f"finish", disabled=True, size=(16, 1)),
          sg.B("Settings", key=f"settings", disabled=True, size=(16, 1)),
          sg.B('Exit', size=(16, 1)),
@@ -99,9 +99,15 @@ def main():
                 window[f"{printer} temps"].update("N/A")
                 window[f"{printer} job"].update("N/A")
 
+        joblist = backend.queue.get_jobs()
+        if joblist.shape[0] > 0 and len(backend.printer_status_dict["available"]) > 0:
+            window["start"].update(disabled=False)
+        else:
+            window["start"].update(disabled=True)
+
         # Event handling
         if event == "start":
-            start_print_ui.main(backend)
+            ui_start_print.main(backend)
 
         # if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
         #     print('Event = ', event)

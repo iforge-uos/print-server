@@ -1,10 +1,20 @@
 import PySimpleGUI as sg
 import time
+import datetime
 
 TIMEOUT = 60
 
 
+def convert_times(raw_time):
+    td = datetime.timedelta(days=raw_time)
+    return str(datetime.timedelta(days=raw_time)).split(".")[0]
+
+
 def main(backend):
+    print(convert_times(0.2))
+    print(convert_times(0.8))
+    print(convert_times(1.5))
+    column_headings = ["Gcode Filename", "Print Time", "Name", "iRep Check", "Filament (g)"]
     layout = [
             [sg.T("Start Print", justification='center', font=("Helvetica", 16), expand_x=True)],
             [sg.T("Printer:"),
@@ -12,11 +22,12 @@ def main(backend):
                       disabled=True,
                       key="printer_dropdown",
                       enable_events=True)],
-            [sg.Table([["Test1", "Test2", "Test3"], ["Test4", "Test5", "Test6"], ["Test7", "Test8", "Test9"]],
+            [sg.Table([["Filename", "Print Time", "User", "Rep", "Filament (g)"]],
                       select_mode=sg.TABLE_SELECT_MODE_BROWSE,
                       enable_events=True,
-                      key="print_table")],
-            [sg.B("Submit"), sg.B("Refresh"), sg.B("Exit")]
+                      key="print_table",
+                      headings=column_headings)],
+            [sg.B("Submit", disabled=True), sg.B("Refresh"), sg.B("Exit")]
         ]
 
     window = sg.Window('iForge Printer Control',
@@ -37,8 +48,15 @@ def main(backend):
 
     logout_timer = time.time()
 
+    joblist = backend.queue.get_jobs()
+    # ignore these warnings, there is no fix... we tried :'(
+    joblist.loc[:, "Print Time"] = joblist.apply(lambda x: str(datetime.timedelta(days=x["Print Time"])).split(".")[0], axis=1)
+    window["print_table"].update(joblist[column_headings].values.tolist())
+
     while True:
         event, values = window.read(timeout=30000)
+
+        # print(event)
 
         # try:
         #     print(f"{time.time() - logout_timer}, {event}, {values[event]}")
@@ -49,11 +67,25 @@ def main(backend):
             print("[LOG] Clicked Exit!")
             break
 
+        if event in ["printer_dropdown", "print_table"]:
+            if values["print_table"] and values["printer_dropdown"]:
+                window["Submit"].update(disabled=False)
+            else:
+                window["Submit"].update(disabled=True)
+
         if event in ("Refresh", sg.TIMEOUT_EVENT):
             backend.update()
+            joblist = backend.queue.get_jobs()
+            # ignore these warnings, there is no fix... we tried :'(
+            joblist.loc[:, "Print Time"] = joblist.apply(
+                lambda x: str(datetime.timedelta(days=x["Print Time"])).split(".")[0], axis=1)
+            window["print_table"].update(joblist[column_headings].values.tolist())
 
         if event == "Submit":
             print(f"Submitted {values['print_table']} on {values['printer_dropdown']}")
+            backend.queue.select_by_id(joblist.loc[:, "Unique ID"].values[values['print_table'][0]])
+            backend.do_print(values['printer_dropdown'])
+            sg.popup_auto_close(f"Print started on {values['printer_dropdown']}!", title="Running", auto_close_duration=5, modal=False)qeqe
             break
 
         available_printers = [printer['name'] for printer in backend.fleet.printers.values() if printer['status'] == "available"]
