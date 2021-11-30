@@ -16,6 +16,8 @@ def get_number_in_list(elem_list):
         except (ValueError, TypeError):
             if n == "c":
                 return -1
+            if n == "l":
+                return -2
 
         if n in list(range(i+1)):
             return n
@@ -34,8 +36,9 @@ def print_print(backend):
         print("No available printers, try again later")
         return
 
-    backend.ulti_queue.update()
-    joblist = backend.ulti_queue.get_jobs()
+    backend.queue.update()
+    joblist = backend.queue.get_jobs()
+    do_level_print = False
 
     if joblist.shape[0] == 0:  # if none free, wait and restart loop
         print("\nNo jobs queued, try again later")
@@ -47,10 +50,12 @@ def print_print(backend):
                             f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
                             f"\t{job[7]}"
                             for job in joblist.loc[:].values.tolist()])
-    if n == -1:
+    if n == -1:  # cancel action
         return
-
-    backend.ulti_queue.select_by_id(joblist.loc[:, "Unique ID"].values[n])
+    if n == -2:  # levelling print
+        do_level_print = True
+    else:
+        backend.queue.select_by_id(joblist.loc[:, "Unique ID"].values[n])
 
     print("Available printers:")
 
@@ -58,7 +63,16 @@ def print_print(backend):
     if n == -1:
         return
 
-    backend.do_print(backend.printer_status_dict['available'][n])
+    if not do_level_print:
+        backend.do_print(backend.printer_status_dict['available'][n])
+    else:
+        level_print_id = "1VeY6MftN5HmBQ4uVGZw_FNZT8KfvY3R9"  # TODO: MOVE THIS
+
+        backend.queue.gcode_drive.download_file(level_print_id, "bed_test.gcode")
+        backend.fleet.select_printer(backend.printer_status_dict['available'][n])
+        backend.fleet.add_print("bed_test.gcode")
+        backend.fleet.select_print("bed_test.gcode")
+        backend.fleet.run_print()
 
 
 def finish_print(backend):

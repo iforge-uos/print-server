@@ -45,9 +45,9 @@ class PrintQueue:
 
     def download_selected(self):
         filename = self.selected.loc[:, 'Unique ID'].values[0] + '.gcode'
-        print(f"Downloading: {self.selected.loc[:, 'Name'].values[0]} - {time.strftime('%H:%M:%S', time.gmtime(self.selected.loc[:, 'Print Time'].values[0] * 24 * 60 * 60))} - {self.selected.loc[:, 'Date Added'].values[0]}, {filename}")
+        print(f"Downloading: {self.selected.loc[:, 'Name'].values[0]} - {time.strftime('%H:%M:%S', time.gmtime(self.selected.loc[:, 'Print Time'].values[0] * 24 * 60 * 60))} - {self.selected.loc[:, 'Date Added'].values[0]}, {filename}... ", end="")
         self.gcode_drive.download_file(self.selected.loc[:, 'Unique ID'].values[0], filename)
-        print("Download complete")
+        print("Complete")
         return filename
 
     def mark_running(self, printer_name):
