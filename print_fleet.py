@@ -23,7 +23,8 @@ class PrintFleet:
 
     def connect_clients(self):
         for printer, accessDict in self.printer_access.items():
-            self.printers[printer] = {"name": printer, "client": None, "print_job": None, 'status': 'offline', 'printing': False, 'details': {}}
+            self.printers[printer] = {"name": printer, "client": None, "print_job": None, 'status': 'offline',
+                                      'printing': False, 'details': {}}
             try:
                 self.printers[printer]["client"] = \
                     octorest.OctoRest(url="http://" + accessDict["ip"] + ":" + accessDict["port"],
@@ -100,7 +101,9 @@ class PrintFleet:
         return status_dict
 
     def add_print(self, filename, path=""):
+        print(f"Uploading {filename}... ", end="")
         self.selected_printer["client"].upload(filename, path=path)
+        print("Complete")
 
     def select_print(self, filename):
         self.selected_printer["client"].select(filename, print=False)
@@ -114,7 +117,7 @@ class PrintFleet:
         t0 = time.time()
         while self.selected_printer["client"].printer()['state']['flags']['cancelling']:
             time.sleep(0.5)
-        print(f"Cancel of {self.selected_printer['name']} complete, time taken: {time.time()-t0:.1f}s")
+        print(f"Cancel of {self.selected_printer['name']} complete, time taken: {time.time() - t0:.1f}s")
         time.sleep(0.5)
 
     def clear_files(self):
