@@ -36,7 +36,8 @@ def main(passcode, header="iForge 3D Print System"):
     window.maximize()
 
     while True:
-        event, values = window.read()
+        window.bring_to_front()
+        event, values = window.read(timeout=1000)
 
         if event == sg.WINDOW_CLOSE_ATTEMPTED_EVENT and sg.popup_yes_no('Do you really want to exit?') == 'Yes':
             break
