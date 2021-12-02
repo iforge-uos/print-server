@@ -59,6 +59,7 @@ def main(backend):
     window["print_table"].update(joblist[column_headings].values.tolist())
 
     while True:
+        window.bring_to_front()
         event, values = window.read(timeout=30000)
 
         # print(event)
@@ -89,10 +90,10 @@ def main(backend):
 
         if event == "Submit":
             print(f"Submitted {values['print_table']} on {values['printer_dropdown']}")
+            sg.popup_no_wait(f"Print starting on {values['printer_dropdown']}!", title="Starting",
+                             auto_close=True, auto_close_duration=10, modal=False, keep_on_top=True)
             backend.queue.select_by_id(joblist.loc[:, "Unique ID"].values[values['print_table'][0]])
             backend.do_print(values['printer_dropdown'])
-            sg.popup_auto_close(f"Print started on {values['printer_dropdown']}!", title="Running",
-                                auto_close_duration=5, modal=False)
             break
 
         available_printers = [printer['name'] for printer in backend.fleet.printers.values() if

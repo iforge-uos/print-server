@@ -76,6 +76,7 @@ def main():
 
     # This is an Event Loop
     while True:
+        window.bring_to_front()
         event, values = window.read(timeout=1000)
         backend.update()
         # print(event)
