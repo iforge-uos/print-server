@@ -16,19 +16,19 @@ def main(backend):
     print(convert_times(1.5))
     column_headings = ["Gcode Filename", "Print Time", "Name", "iRep Check", "Filament (g)"]
     layout = [
-            [sg.T("Start Print", justification='center', font=("Helvetica", 16), expand_x=True)],
-            [sg.T("Printer:"),
-             sg.Combo(list(backend.fleet.printer_access.keys()),
-                      disabled=True,
-                      key="printer_dropdown",
-                      enable_events=True)],
-            [sg.Table([["Filename", "Print Time", "User", "Rep", "Filament (g)"]],
-                      select_mode=sg.TABLE_SELECT_MODE_BROWSE,
-                      enable_events=True,
-                      key="print_table",
-                      headings=column_headings)],
-            [sg.B("Submit", disabled=True), sg.B("Refresh"), sg.B("Exit")]
-        ]
+        [sg.T("Start Print", justification='center', font=("Helvetica", 16), expand_x=True)],
+        [sg.T("Printer:"),
+         sg.Combo(list(backend.fleet.printer_access.keys()),
+                  disabled=True,
+                  key="printer_dropdown",
+                  enable_events=True)],
+        [sg.Table([["Filename", "Print Time", "User", "Rep", "Filament (g)"]],
+                  select_mode=sg.TABLE_SELECT_MODE_BROWSE,
+                  enable_events=True,
+                  key="print_table",
+                  headings=column_headings)],
+        [sg.B("Submit", disabled=True), sg.B("Refresh"), sg.B("Exit")]
+    ]
 
     window = sg.Window('iForge Printer Control',
                        layout,
@@ -39,7 +39,8 @@ def main(backend):
     window.finalize()
     window.maximize()
 
-    available_printers = [printer['name'] for printer in backend.fleet.printers.values() if printer['status'] == "available"]
+    available_printers = [printer['name'] for printer in backend.fleet.printers.values() if
+                          printer['status'] == "available"]
     window["printer_dropdown"].update(values=available_printers)
     if len(available_printers) > 0:
         window["printer_dropdown"].update(disabled=False)
@@ -49,8 +50,12 @@ def main(backend):
     logout_timer = time.time()
 
     joblist = backend.queue.get_jobs()
+
     # ignore these warnings, there is no fix... we tried :'(
-    joblist.loc[:, "Print Time"] = joblist.apply(lambda x: str(datetime.timedelta(days=x["Print Time"])).split(".")[0], axis=1)
+    joblist.loc[:, "Print Time"] = joblist.apply(lambda x: str(datetime.timedelta(days=x["Print Time"])).split(".")[0],
+                                                 axis=1)
+    joblist.loc[:, "Gcode Filename"] = joblist.apply(lambda x: x["Gcode Filename"].split(',')[-1][1:-2], axis=1)
+
     window["print_table"].update(joblist[column_headings].values.tolist())
 
     while True:
@@ -79,16 +84,19 @@ def main(backend):
             # ignore these warnings, there is no fix... we tried :'(
             joblist.loc[:, "Print Time"] = joblist.apply(
                 lambda x: str(datetime.timedelta(days=x["Print Time"])).split(".")[0], axis=1)
+            joblist.loc[:, "Gcode Filename"] = joblist.apply(lambda x: x["Gcode Filename"].split(',')[-1][1:-2], axis=1)
             window["print_table"].update(joblist[column_headings].values.tolist())
 
         if event == "Submit":
             print(f"Submitted {values['print_table']} on {values['printer_dropdown']}")
             backend.queue.select_by_id(joblist.loc[:, "Unique ID"].values[values['print_table'][0]])
             backend.do_print(values['printer_dropdown'])
-            sg.popup_auto_close(f"Print started on {values['printer_dropdown']}!", title="Running", auto_close_duration=5, modal=False)qeqe
+            sg.popup_auto_close(f"Print started on {values['printer_dropdown']}!", title="Running",
+                                auto_close_duration=5, modal=False)
             break
 
-        available_printers = [printer['name'] for printer in backend.fleet.printers.values() if printer['status'] == "available"]
+        available_printers = [printer['name'] for printer in backend.fleet.printers.values() if
+                              printer['status'] == "available"]
         window["printer_dropdown"].update(value=values["printer_dropdown"], values=available_printers)
         if len(available_printers) > 0:
             window["printer_dropdown"].update(disabled=False)
