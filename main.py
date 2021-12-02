@@ -6,6 +6,8 @@ def get_number_in_list(elem_list):
     i = 0
     for i, elem in enumerate(elem_list):
         print(f"{i}.\t{elem}")
+        if i > 15:
+            break
 
     print("Enter number to select ('c' to cancel)")
     n = None
