@@ -57,23 +57,16 @@ class PrintQueue:
         self.selected.loc[:, "Printed colour"] = "auto-print"
         self.print_sheet.set_row(self.selected)
 
-    def mark_result(self, printer_name, result, comment=""):
+    def mark_result(self, printer_name, result, requeue=False, comment=""):
         self.select_by_printer(printer_name)
         # print(f"Completing: {self.selected.loc[:, 'Unique ID'].values[0]}.gcode, on: {printer_name}")
-        self.selected.loc[:, "Status"] = result
-        self.selected.loc[:, "Notes"] = comment
-        self.print_sheet.set_row(self.selected)
-
-    def mark_cancel(self, printer_name, requeue, comment):
-        self.select_by_printer(printer_name)
-
         if requeue:
             self.selected.loc[:, "Status"] = "Queued"
             self.selected.loc[:, "Notes"] = "re-queued"
             self.selected.loc[:, "Printer"] = ""
             self.selected.loc[:, "Printed colour"] = ""
         else:
-            self.selected.loc[:, "Status"] = "Failed"
+            self.selected.loc[:, "Status"] = result
             self.selected.loc[:, "Notes"] = comment
 
         self.print_sheet.set_row(self.selected)
