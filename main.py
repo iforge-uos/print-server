@@ -112,7 +112,7 @@ def finish_print(backend):
             requeue = True
 
         if not requeue:
-            print(f"Please enter failure comment for printer: {backend.printer_status_dict['printing'][n]}")
+            print(f"Please enter failure comment for printer: {backend.printer_status_dict['finished'][n]}")
             comment = input()
     else:
         cf = "Complete"
