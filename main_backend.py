@@ -53,11 +53,11 @@ class Backend:
 
         self.queue.mark_running(printer_name)
 
-    def end_print(self, printer_name, result, comment=""):
+    def end_print(self, printer_name, result, requeue, comment=""):
         # TODO: any other handling of finished prints?
         # TODO: extract completed filename from printer for mark complete? (more robust?)
         #   - currently only works by printer
-        self.queue.mark_result(printer_name, result, comment)
+        self.queue.mark_result(printer_name, result, requeue, comment)
         self.fleet.select_printer(printer_name)
         self.fleet.clear_files()
 
@@ -66,4 +66,4 @@ class Backend:
         self.fleet.select_printer(printer_name)
         self.fleet.cancel_print()
         self.fleet.clear_files()
-        self.queue.mark_cancel(printer_name, requeue, comment)
+        self.queue.mark_result(printer_name, "Failed", requeue, comment)

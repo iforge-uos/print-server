@@ -88,6 +88,9 @@ def finish_print(backend):
     if n == -1:
         return
 
+    requeue = False
+    comment = ""
+
     print("Was the print successful? [Complete/Failed]")
     while True:
         cf = input().upper()
@@ -97,13 +100,24 @@ def finish_print(backend):
 
     if cf in ["FAILED", "F"]:
         cf = "Failed"
-        print(f"Please enter failure comment for printer: {backend.printer_status_dict['finished'][n]}")
-        comment = input()
+
+        print("Re-Queue the print? [Yes/No]")
+        while True:
+            yn = input().upper()
+            if yn in ['YES', 'Y', 'NO', 'N']:
+                break
+            print(f"{yn} not recognised, try again")
+
+        if yn in ['YES', 'Y']:
+            requeue = True
+
+        if not requeue:
+            print(f"Please enter failure comment for printer: {backend.printer_status_dict['finished'][n]}")
+            comment = input()
     else:
         cf = "Complete"
-        comment = ""
 
-    backend.end_print(backend.printer_status_dict['finished'][n], cf, comment)
+    backend.end_print(backend.printer_status_dict['finished'][n], cf, requeue, comment)
 
 
 def cancel_print(backend):
