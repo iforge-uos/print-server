@@ -20,9 +20,10 @@ def main():
 
     temp_window = sg.Window("Loading",
                             temp_layout,
-                            no_titlebar=True)
+                            resizable=True)
     temp_window.finalize()
     temp_window.maximize()
+    temp_window.read(timeout=100)
 
     backend = Backend()
 
@@ -68,7 +69,8 @@ def main():
     window = sg.Window('iForge Printer Control',
                        layout,
                        element_justification="center",
-                       no_titlebar=True)
+                       resizable=True
+                       )
     window.finalize()
     window.maximize()
 

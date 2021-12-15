@@ -34,8 +34,7 @@ def main(backend):
                        layout,
                        element_justification="center",
                        modal=True,
-                       no_titlebar=True,
-                       )
+                       resizable=True)
     window.finalize()
     window.maximize()
 

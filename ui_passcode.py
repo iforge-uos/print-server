@@ -7,8 +7,9 @@ BUTTON_HEIGHT = 3
 bs = (BUTTON_WIDTH, BUTTON_HEIGHT)
 
 
-def main(passcode, header="iForge 3D Print System"):
+def main(passcode, header="iForge 3D Print System", quitcode=42069):
     passcode = str(passcode)
+    quitcode = str(quitcode)
     if not passcode.isnumeric():
         raise TypeError("Passcode string must be numeric!")
 
@@ -30,7 +31,7 @@ def main(passcode, header="iForge 3D Print System"):
     window = sg.Window("Passcode",
                        element_justification="center",
                        enable_close_attempted_event=True,
-                       no_titlebar=True)
+                       resizable=True)
     window.layout(layout)
     window.finalize()
     window.maximize()
@@ -51,6 +52,9 @@ def main(passcode, header="iForge 3D Print System"):
                 return_value = True
                 break
             else:
+                if passcode_input == quitcode:
+                    exit(0)
+
                 window["-output_text-"]("WRONG - TRY AGAIN", text_color="red")
                 passcode_input = ""
 
