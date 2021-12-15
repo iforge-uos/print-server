@@ -4,16 +4,10 @@ import datetime
 
 TIMEOUT = 60
 
-
-def convert_times(raw_time):
-    td = datetime.timedelta(days=raw_time)
-    return str(datetime.timedelta(days=raw_time)).split(".")[0]
-
-
 def main(backend):
     column_headings = ["Gcode Filename", "Print Time", "Name", "iRep Check", "Filament (g)"]
     layout = [
-        [sg.T("Start Print", justification='center', font=("Helvetica", 16), expand_x=True)],
+        [sg.T("Finish Print", justification='center', font=("Helvetica", 16), expand_x=True)],
         [sg.T("Printer:"),
          sg.Combo(list(backend.fleet.printer_access.keys()),
                   disabled=True,

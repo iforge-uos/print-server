@@ -2,6 +2,7 @@ import PySimpleGUI as sg
 from main_backend import Backend
 import ui_passcode
 import ui_start_print
+import ui_finish_print
 import datetime
 import time
 
@@ -33,13 +34,13 @@ def main():
         frame_layout = [[sg.T("Status:", size=(10, 1), justification="right"),
                          sg.T("Loading...", key=f"{printer} status", size=(38, 1))
                          ],
-                        [sg.T("Temperature:", size=(10, 1), justification="right"),
+                        [sg.T("Temps:", size=(10, 1), justification="right"),
                          sg.T("Loading...", key=f"{printer} temps", size=(38, 1))
                          ],
                         [sg.T("Job:", size=(10, 1), justification="right"),
                          sg.T("Loading...", key=f"{printer} job", size=(38, 1))
                          ],
-                        [sg.T("Progress:", size=(10, 1), justification="right"),
+                        [sg.T("Prog:", size=(10, 1), justification="right"),
                          sg.T("Loading...", key=f"{printer} progress", size=(38, 1))
                          ],
                         # [sg.B("Start Print", key=f"{printer} start", disabled=True, size=(16, 1)),
@@ -101,16 +102,26 @@ def main():
             else:
                 window[f"{printer} temps"].update("N/A")
                 window[f"{printer} job"].update("N/A")
+                window[f"{printer} progress"].update("N/A")
 
         joblist = backend.queue.get_jobs()
         if joblist.shape[0] > 0 and len(backend.printer_status_dict["available"]) > 0:
-            window["start"].update(disabled=False)
+            window["start"].update("Start Print", disabled=False)
         else:
-            window["start"].update(disabled=True)
+            window["start"].update("No print(er)s", disabled=True)
+
+        if len(backend.printer_status_dict["finished"]) > 0:
+            window["finish"].update("Finish Print", disabled=False)
+        else:
+            window["finish"].update("None Finished", disabled=True)
 
         # Event handling
         if event == "start":
             ui_start_print.main(backend)
+
+        # Event handling
+        if event == "finish":
+            ui_finish_print.main(backend)
 
         # if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
         #     print('Event = ', event)
