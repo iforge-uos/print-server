@@ -98,7 +98,7 @@ def main():
                 window[f"{printer} temps"].update(
                     f"Bed: {backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual']}/{backend.fleet.printers[printer]['details']['status']['temperature']['bed']['target']}, Tool: {backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['actual']}/{backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['target']}")
                 window[f"{printer} job"].update(
-                    f"{backend.fleet.printers[printer]['details']['job_info']['job']['file']['name']}")
+                    f"{backend.fleet.printers[printer]['details']['job_info']['job']['file']['printer_name']}")
                 window[f"{printer} progress"].update(
                     f"{backend.fleet.printers[printer]['details']['job_info']['progress']['completion'] or 0:.1f}% complete, {str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['job_info']['progress']['printTimeLeft'] or 0))} remaining")
             else:

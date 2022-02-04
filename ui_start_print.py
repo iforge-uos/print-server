@@ -35,7 +35,7 @@ def main(backend):
     window.finalize()
     window.maximize()
 
-    available_printers = [printer['name'] for printer in backend.fleet.printers.values() if
+    available_printers = [printer['printer_name'] for printer in backend.fleet.printers.values() if
                           printer['status'] == "available"]
     window["printer_dropdown"].update(values=available_printers)
     if len(available_printers) > 0:
@@ -92,7 +92,7 @@ def main(backend):
             backend.do_print(values['printer_dropdown'])
             break
 
-        available_printers = [printer['name'] for printer in backend.fleet.printers.values() if
+        available_printers = [printer['printer_name'] for printer in backend.fleet.printers.values() if
                               printer['status'] == "available"]
         window["printer_dropdown"].update(value=values["printer_dropdown"], values=available_printers)
         if len(available_printers) > 0:
