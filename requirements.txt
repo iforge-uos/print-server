@@ -5,4 +5,4 @@ oauth2client~=4.1.3
 google-api-python-client~=2.29.0
 cryptography~=35.0.0
 pandas~=1.3.4
-pysimplegui~=4.55.0
+pysimplegui~=4.57.0
