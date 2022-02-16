@@ -13,7 +13,7 @@ def convert_times(raw_time):
 def main(backend):
     column_headings = ["Gcode Filename", "Print Time", "Name", "iRep Check", "Filament (g)"]
     layout = [
-        [sg.T("Start Print", justification='center', font=("Helvetica", 16), expand_x=True)],
+        [sg.T("Start Print", justification='center', expand_x=True)],
         [sg.T("Printer:"),
          sg.Combo(list(backend.fleet.printer_access.keys()),
                   disabled=True,

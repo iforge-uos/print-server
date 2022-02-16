@@ -26,16 +26,21 @@ class PrintFleet:
             self.printers[printer] = {"name": printer, "client": None, "print_job": None, 'status': 'offline',
                                       'printing': False, 'details': {}}
             try:
+                print(f"Connecting to {printer.capitalize()}... ", end='')
                 self.printers[printer]["client"] = \
                     octorest.OctoRest(url="http://" + accessDict["ip"] + ":" + accessDict["port"],
                                       apikey=accessDict["apikey"])
+                print("Success")
             except ConnectionError as e:
+                print("Failed")
                 # print("Connection Error")
                 pass
             except RuntimeError as e:
+                print("Failed")
                 # print("Runtime Error")
                 pass
             except TypeError:
+                print("Failed")
                 # print("Type Error")
                 pass
 
