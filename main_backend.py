@@ -1,4 +1,4 @@
-import print_fleet
+import print_fleet_v2 as print_fleet
 import print_queue
 import json
 import time
@@ -6,15 +6,14 @@ from cryptography.fernet import Fernet
 
 
 class Backend:
-    def __init__(self):
+    def __init__(self, printer_type):
         self.secrets = {}
         self.load_secrets()
 
-        self.printer_status_dict = {}
-        self.printer_dict = {}
-        self.queue = print_queue.PrintQueue(self.secrets["google_secrets"], "Ultimaker")
+        self.printers = self.secrets["printers"]
+        self.queue = print_queue.PrintQueue(google_secrets=self.secrets["google_secrets"], printer_type=printer_type)
         print("Performing initial printer connection, this may take some time")
-        self.fleet = print_fleet.PrintFleet(self.secrets["printers"])
+        self.fleet = print_fleet.PrintFleet(self.printers)
         print("Complete")
         self.update()
 
@@ -36,20 +35,19 @@ class Backend:
         with open("secrets.json", "wb") as out_file:
             out_file.write(decrypted)
 
+    def connect(self):
+        self.fleet.connect("all")
+
     def update(self):
         self.queue.update()
-        self.fleet.update_status(self.queue.get_running_printers())
-        self.printer_status_dict = self.fleet.get_status()
-        for key in self.printer_status_dict.keys():
-            for value in self.printer_status_dict[key]:
-                self.printer_dict[value] = key
+        running_printers = self.queue.get_running_printers()
+        self.fleet.update("all")
 
     def do_print(self, printer_name):
         filename = self.queue.download_selected()
-        self.fleet.select_printer(printer_name)
-        self.fleet.add_print(filename)
-        self.fleet.select_print(filename)
-        self.fleet.run_print()
+
+        self.fleet.upload(printer_name, filename)
+        self.fleet.run_print(printer_name, filename)
 
         self.queue.mark_running(printer_name)
 
@@ -58,12 +56,12 @@ class Backend:
         # TODO: extract completed filename from printer for mark complete? (more robust?)
         #   - currently only works by printer
         self.queue.mark_result(printer_name, result, requeue, comment)
-        self.fleet.select_printer(printer_name)
-        self.fleet.clear_files()
+
+        self.fleet.clear_files(printer_name)
 
     def cancel_print(self, printer_name, requeue, comment):
         print(f"Cancelling: {printer_name}, Re-Queue: {requeue}")
-        self.fleet.select_printer(printer_name)
-        self.fleet.cancel_print()
-        self.fleet.clear_files()
+        self.fleet.cancel_print(printer_name)
+        self.fleet.clear_files(printer_name)
+
         self.queue.mark_result(printer_name, "Failed", requeue, comment)

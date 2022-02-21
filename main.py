@@ -28,13 +28,20 @@ def get_number_in_list(elem_list):
 
 
 def list_printers(backend):
+    backend.update()
     print(f"Current printer status':")
-    for printer in backend.fleet.printer_access.keys():
-        print(f"{printer:20s} - {backend.fleet.printers[printer]['status']}")
+    for printer in backend.fleet.printers.keys():
+        print(f"{printer:20s} - {backend.fleet.printers[printer]['details']['state']}")
 
 
 def print_print(backend):
-    if len(backend.printer_status_dict["available"]) == 0:
+    backend.update()
+    available_printers = []
+    for i_printer in backend.printers.keys():
+        if backend.printers[i_printer]["details"]["state"] == "available":
+            available_printers.append(i_printer)
+
+    if len(available_printers) == 0:
         print("No available printers, try again later")
         return
 
@@ -61,30 +68,34 @@ def print_print(backend):
 
     print("Available printers:")
 
-    n = get_number_in_list(backend.printer_status_dict['available'])
+    n = get_number_in_list(available_printers)
     if n == -1:
         return
 
     if not do_level_print:
-        backend.do_print(backend.printer_status_dict['available'][n])
+        backend.do_print(available_printers[n])
     else:
         level_print_id = "1VeY6MftN5HmBQ4uVGZw_FNZT8KfvY3R9"  # TODO: MOVE THIS
 
         backend.queue.gcode_drive.download_file(level_print_id, "bed_test.gcode")
-        backend.fleet.select_printer(backend.printer_status_dict['available'][n])
-        backend.fleet.add_print("bed_test.gcode")
-        backend.fleet.select_print("bed_test.gcode")
-        backend.fleet.run_print()
+        backend.fleet.upload(available_printers[n], "bed_test.gcode")
+        backend.fleet.run_print(available_printers[n], "bed_test.gcode")
 
 
 def finish_print(backend):
-    if len(backend.printer_status_dict['finished']) == 0:
+    backend.update()
+    finished_printers = []
+    for i_printer in backend.printers.keys():
+        if backend.printers[i_printer]["details"]["state"] == "finished":
+            finished_printers.append(i_printer)
+
+    if len(finished_printers) == 0:
         print("No printers finished, try again later")
         return
 
     print("Select printer to process:")
 
-    n = get_number_in_list(backend.printer_status_dict['finished'])
+    n = get_number_in_list(finished_printers)
     if n == -1:
         return
 
@@ -112,22 +123,28 @@ def finish_print(backend):
             requeue = True
 
         if not requeue:
-            print(f"Please enter failure comment for printer: {backend.printer_status_dict['finished'][n]}")
+            print(f"Please enter failure comment for printer: {finished_printers[n]}")
             comment = input()
     else:
         cf = "Complete"
 
-    backend.end_print(backend.printer_status_dict['finished'][n], cf, requeue, comment)
+    backend.end_print(finished_printers[n], cf, requeue, comment)
 
 
 def cancel_print(backend):
-    if len(backend.printer_status_dict["printing"]) == 0:
-        print("No available printers, try again later")
+    backend.update()
+    printing_printers = []
+    for i_printer in backend.printers.keys():
+        if backend.printers[i_printer]["details"]["state"] == "printing":
+            printing_printers.append(i_printer)
+
+    if len(printing_printers) == 0:
+        print("No printing printers, try again later")
         return
 
     print("Select printer to cancel:")
 
-    n = get_number_in_list(backend.printer_status_dict['printing'])
+    n = get_number_in_list(printing_printers)
     if n == -1:
         return
 
@@ -145,12 +162,12 @@ def cancel_print(backend):
 
     comment = ""
     if not requeue:
-        print(f"Please enter failure comment for printer: {backend.printer_status_dict['printing'][n]}")
+        print(f"Please enter failure comment for printer: {printing_printers[n]}")
         comment = input()
 
-    backend.cancel_print(backend.printer_status_dict['printing'][n], requeue, comment)
+    backend.cancel_print(printing_printers[n], requeue, comment)
 
-    print(f"Go and check {backend.printer_status_dict['printing'][n]} is clear and ready to print again.")
+    print(f"Go and check {printing_printers[n]} is clear and ready to print again.")
     time.sleep(10)
 
 if __name__ == '__main__':
@@ -161,7 +178,7 @@ if __name__ == '__main__':
     # args = parser.parse_args()
     # secrets_key = args.secrets_key
 
-    backend = Backend()
+    backend = Backend(printer_type="Ultimaker")
 
     loop = True
     while loop:  # loop = False  # only run single loop for testing
@@ -186,6 +203,9 @@ if __name__ == '__main__':
 
         elif choice == "C":  # unhandled, will select "finished" print and mark complete/fail
             cancel_print(backend)
+
+        elif choice == "R":  # unhandled, will select "finished" print and mark complete/fail
+            backend.connect()
 
         elif choice in ["Q"]:
             exit()
