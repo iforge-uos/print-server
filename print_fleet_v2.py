@@ -32,7 +32,7 @@ class PrintFleet:
 
         else:
             try:
-                print(f"Connecting to {printer_name}... ", end="")
+                print(f"Connecting to {printer_name:10s}...\t", end="")
                 self.printers[printer_name]["client"] = octorest.OctoRest(
                     url="http://" + self.printers[printer_name]["ip"]
                         + ":" + self.printers[printer_name]["port"],
@@ -53,25 +53,29 @@ class PrintFleet:
     def update(self, printer_name, queue_running=[]):
         if printer_name == "all":
             for i_printer in self.printers.keys():
-                self.update(i_printer)
+                self.update(i_printer, queue_running)
         else:
             if self.printers[printer_name]["client"]:
                 self.printers[printer_name]["details"] = self.printers[printer_name]["client"].job_info()
+
+                # fix bad standards from octorest
+                self.printers[printer_name]["details"]["state"] = self.printers[printer_name]["details"]["state"].lower()
+
                 self.printers[printer_name]["poll_time"] = int(time.time())
 
-                if self.printers[printer_name]["details"]['state'].lower() == "operational" and printer_name not in queue_running:
+                if self.printers[printer_name]["details"]['state'] == "operational" and printer_name not in queue_running:
                     self.printers[printer_name]["details"]['state'] = "available"
 
-                if self.printers[printer_name]["details"]['state'].lower() == "operational" and printer_name in queue_running:
+                if self.printers[printer_name]["details"]['state'] == "operational" and printer_name in queue_running:
                     self.printers[printer_name]["details"]['state'] = "finished"
 
-                if self.printers[printer_name]["details"]['state'].lower() == "printing" and printer_name not in queue_running:
+                if self.printers[printer_name]["details"]['state'] == "printing" and printer_name not in queue_running:
                     self.printers[printer_name]["details"]['state'] = "queue_error"
             else:
                 self.printers[printer_name]["details"] = {"state": "offline"}
                 # "poll_time" remains unchanged
 
-            print(self.printers[printer_name]["details"]["state"])
+            # print(f"{printer_name:8s}\t-\t{self.printers[printer_name]['details']['state']}")
 
     def upload(self, printer_name, filename, path=""):
         return self.printers[printer_name]["client"].upload(filename, path=path)

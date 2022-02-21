@@ -180,14 +180,19 @@ if __name__ == '__main__':
 
     backend = Backend(printer_type="Ultimaker")
 
+    # start with some information
+    backend.update()
+    list_printers(backend)
+
     loop = True
     while loop:  # loop = False  # only run single loop for testing
 
         print("\nSelect action:\n"
-              "'l' List status\n"
-              "'p' run a Print\n"
-              "'f' handle Finished print (Complete/Fail)\n"
-              "'c' to Cancel print")
+              "'l'\t-\tList\n"
+              "'p'\t-\tPrint\n"
+              "'f'\t-\tFinish print handling (Complete/Fail)\n"
+              "'c'\t-\tCancel print\n"
+              "'r'\t-\tRefresh printers (slow)")
         choice = input().upper()
 
         backend.update()
