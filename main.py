@@ -28,14 +28,12 @@ def get_number_in_list(elem_list):
 
 
 def list_printers(backend):
-    backend.update()
     print(f"Current printer status':")
     for printer in backend.fleet.printers.keys():
         print(f"{printer:20s} - {backend.fleet.printers[printer]['details']['state']}")
 
 
 def print_print(backend):
-    backend.update()
     available_printers = []
     for i_printer in backend.printers.keys():
         if backend.printers[i_printer]["details"]["state"] == "available":
@@ -83,7 +81,6 @@ def print_print(backend):
 
 
 def finish_print(backend):
-    backend.update()
     finished_printers = []
     for i_printer in backend.printers.keys():
         if backend.printers[i_printer]["details"]["state"] == "finished":
@@ -132,7 +129,6 @@ def finish_print(backend):
 
 
 def cancel_print(backend):
-    backend.update()
     printing_printers = []
     for i_printer in backend.printers.keys():
         if backend.printers[i_printer]["details"]["state"] == "printing":
