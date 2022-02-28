@@ -37,15 +37,22 @@ class PrintFleet:
                     url="http://" + self.printers[printer_name]["ip"]
                         + ":" + self.printers[printer_name]["port"],
                     apikey=self.printers[printer_name]["apikey"])
+
+                self.printers[printer_name]["client"].job_info()
+
+                self.printers[printer_name]["details"] = {'state': "operational"}
                 print("Success")
             except ConnectionError as e:
                 # print(f"Connection error: {e}")
+                self.printers[printer_name]["details"] = {'state': "offline"}
                 print("Failed")
             except RuntimeError as e:
                 # print(f"Runtime error: {e}")
+                self.printers[printer_name]["details"] = {'state': "offline"}
                 print("Failed")
             except TypeError as e:
                 # print(f"Type error: {e}")
+                self.printers[printer_name]["details"] = {'state': "offline"}
                 print("Failed")
 
             self.update(printer_name)
@@ -54,25 +61,29 @@ class PrintFleet:
         if printer_name == "all":
             for i_printer in self.printers.keys():
                 self.update(i_printer, queue_running)
+
         else:
-            if self.printers[printer_name]["client"]:
-                self.printers[printer_name]["details"] = self.printers[printer_name]["client"].job_info()
+            if self.printers[printer_name]["details"]["state"] != "offline":
+                try:
+                    self.printers[printer_name]["details"] = self.printers[printer_name]["client"].job_info()
 
-                # fix bad standards from octorest
-                self.printers[printer_name]["details"]["state"] = self.printers[printer_name]["details"]["state"].lower()
+                    # fix bad standards from octorest
+                    self.printers[printer_name]["details"]["state"] = self.printers[printer_name]["details"]["state"].lower()
 
-                self.printers[printer_name]["poll_time"] = int(time.time())
+                    self.printers[printer_name]["poll_time"] = int(time.time())
 
-                if self.printers[printer_name]["details"]['state'] == "operational" and printer_name not in queue_running:
-                    self.printers[printer_name]["details"]['state'] = "available"
+                    if self.printers[printer_name]["details"]['state'] == "operational" and printer_name not in queue_running:
+                        self.printers[printer_name]["details"]['state'] = "available"
 
-                if self.printers[printer_name]["details"]['state'] == "operational" and printer_name in queue_running:
-                    self.printers[printer_name]["details"]['state'] = "finished"
+                    if self.printers[printer_name]["details"]['state'] == "operational" and printer_name in queue_running:
+                        self.printers[printer_name]["details"]['state'] = "finished"
 
-                if self.printers[printer_name]["details"]['state'] == "printing" and printer_name not in queue_running:
-                    self.printers[printer_name]["details"]['state'] = "queue_error"
+                    if self.printers[printer_name]["details"]['state'] == "printing" and printer_name not in queue_running:
+                        self.printers[printer_name]["details"]['state'] = "queue_error"
+                except ConnectionError:
+                    self.printers[printer_name]["details"] = {"state": "offline"}
             else:
-                self.printers[printer_name]["details"] = {"state": "offline"}
+                pass
                 # "poll_time" remains unchanged
 
             # print(f"{printer_name:8s}\t-\t{self.printers[printer_name]['details']['state']}")
