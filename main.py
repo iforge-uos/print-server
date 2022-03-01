@@ -174,7 +174,9 @@ if __name__ == '__main__':
     # args = parser.parse_args()
     # secrets_key = args.secrets_key
 
-    backend = Backend(printer_type="Ultimaker")
+    printer_type = input("Enter printer type: ('Prusa' or 'Ultimaker')\n").lower()
+
+    backend = Backend(printer_type=str(printer_type).capitalize())
 
     # start with some information
     backend.update()
