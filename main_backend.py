@@ -10,7 +10,7 @@ class Backend:
         self.secrets = {}
         self.load_secrets()
 
-        self.printers = self.secrets["printers"]
+        self.printers = self.secrets["printers"][printer_type]
         self.queue = print_queue.PrintQueue(google_secrets=self.secrets["google_secrets"], printer_type=printer_type)
         print("Performing initial printer connection, this may take some time")
         self.fleet = print_fleet.PrintFleet(self.printers)
