@@ -3,6 +3,7 @@ import print_queue
 import json
 import time
 from cryptography.fernet import Fernet
+import os
 
 
 class Backend:
@@ -50,6 +51,8 @@ class Backend:
         self.fleet.run_print(printer_name, filename)
 
         self.queue.mark_running(printer_name)
+
+        os.remove(filename)
 
     def end_print(self, printer_name, result, requeue, comment=""):
         # TODO: any other handling of finished prints?
