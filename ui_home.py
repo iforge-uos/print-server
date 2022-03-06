@@ -29,7 +29,7 @@ class WindozeManager:
 
         init_layout = [[sg.VStretch()], [sg.Stretch(), sg.Text("Loading, please wait"), sg.Stretch()], [sg.VStretch()]]
 
-        wm.redraw(init_layout)
+        self.redraw(init_layout)
 
         """ Get screen size and compute dimensions """
         x, y = self.window.size
@@ -47,7 +47,7 @@ class WindozeManager:
                 self.layout_dict[f"{col_number},{row_number}"] = None
                 self.layout_dict["order"][-1].append(f"{col_number},{row_number}")
 
-        self.backend = Backend()
+        self.backend = Backend("Ultimaker")
         self.printers_update()
 
     def printers_update(self):
