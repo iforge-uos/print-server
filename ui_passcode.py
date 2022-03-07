@@ -17,7 +17,10 @@ def main(passcode, header="iForge 3D Print System", quitcode=42069):
     return_value = False
 
     layout = [
+        [sg.VStretch()],
+        [sg.VStretch()],
         [sg.Text(header)],
+        [sg.VStretch()],
         [sg.Text("Please Enter Passcode")],
         [sg.Text(key="-input_display_box-", size=(26, 1), justification="center", relief=sg.RELIEF_SUNKEN)],
         # password_char="*"
@@ -25,7 +28,10 @@ def main(passcode, header="iForge 3D Print System", quitcode=42069):
         [sg.Button("4", size=bs), sg.Button("5", size=bs), sg.Button("6", size=bs)],
         [sg.Button("7", size=bs), sg.Button("8", size=bs), sg.Button("9", size=bs)],
         [sg.Button("Clear", size=bs), sg.Button("0", size=bs), sg.Button("Submit", size=bs)],
-        [sg.Text("", key="-output_text-")]
+        [sg.VStretch()],
+        [sg.Text("", key="-output_text-")],
+        [sg.VStretch()],
+        [sg.VStretch()]
     ]
 
     window = sg.Window("Passcode",

@@ -22,129 +22,58 @@ class WindozeManager:
         if self.window:
             self.window.close()
 
-    def setup(self, WINDOW_FRAME_X_Y=(2, 2)):
+    def setup(self):
 
-        """ Make loading screen """
-        self.FRAME_TILING_X_Y = WINDOW_FRAME_X_Y
-
-        init_layout = [[sg.VStretch()], [sg.Stretch(), sg.Text("Loading, please wait"), sg.Stretch()], [sg.VStretch()]]
-
-        self.redraw(init_layout)
+        loading_layout = [[sg.VStretch()], [sg.Stretch(), sg.Text("Loading, please wait"), sg.Stretch()], [sg.VStretch()]]
+        loading_window = sg.Window("Loading Print Server", loading_layout, resizable=False)
+        loading_window.finalize()
+        loading_window.maximize()
+        loading_window.read(timeout=10)
+        loading_window.read(timeout=10)
 
         """ Get screen size and compute dimensions """
-        x, y = self.window.size
-
-        WINDOW_BORDER = (8 + 5 * self.FRAME_TILING_X_Y[0],
-                         8 + int(3.5 * self.FRAME_TILING_X_Y[1]))  # forumlas by trial and error - 1080p & 1440p (16:9)
-        self.FRAME_SIZE = [(x - 2 * WINDOW_BORDER[0]) / self.FRAME_TILING_X_Y[0],
-                           (y - 2 * WINDOW_BORDER[1]) / self.FRAME_TILING_X_Y[1]]
-
-        """ Setup dictionary for dynamically managing the layout """
-        self.layout_dict["order"] = []
-        for row_number in range(self.FRAME_TILING_X_Y[1]):
-            self.layout_dict["order"].append([])
-            for col_number in range(self.FRAME_TILING_X_Y[0]):
-                self.layout_dict[f"{col_number},{row_number}"] = None
-                self.layout_dict["order"][-1].append(f"{col_number},{row_number}")
+        screen_size = loading_window.size
 
         self.backend = Backend("Ultimaker")
         self.printers_update()
 
     def printers_update(self):
-        # TODO: load printer data to `printer_data`
-        # for printer in self.backend.fleet.printer_access.keys():
-        #     window[f"{printer} status"].update(backend.fleet.printers[printer]['status'])
-        #     if self.backend.fleet.printers[printer]['status'] != "offline":
-        #         self.printer_data[f"{printer.upper()}"] = {}
-        #
-        #
-        #         # print(backend.fleet.printers[printer])
-        #         self.window[f"{printer} temps"].update(
-        #             f"Bed: {self.backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual']}/{backend.fleet.printers[printer]['details']['status']['temperature']['bed']['target']}, Tool: {backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['actual']}/{backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['target']}")
-        #         window[f"{printer} job"].update(
-        #             f"{self.backend.fleet.printers[printer]['details']['job_info']['job']['file']['printer_name']}")
-        #         window[f"{printer} progress"].update(
-        #             f"{self.backend.fleet.printers[printer]['details']['job_info']['progress']['completion'] or 0:.1f}% complete, {str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['job_info']['progress']['printTimeLeft'] or 0))} remaining")
-        #     else:
-        #         window[f"{printer} temps"].update("N/A")
-        #         window[f"{printer} job"].update("N/A")
-        #         window[f"{printer} progress"].update("N/A")
-
         # placeholders:
-        self.printer_data["KEITH"] = {"STATUS": "IDLE", "OTHER_DEETS": None}
-        self.printer_data["PAM"] = {"STATUS": "RUNNING", "OTHER_DEETS": None}
+        self.printer_data["KEITH"] = {"STATUS": "AVAILABLE", "OTHER_DEETS": None}
+        self.printer_data["PAM"] = {"STATUS": "PRINTING", "OTHER_DEETS": None}
         self.printer_data["ROB"] = {"STATUS": "FINISHED", "OTHER_DEETS": None}
         self.printer_data["SARAH"] = {"STATUS": "OFFLINE", "OTHER_DEETS": None}
 
         for name in self.printer_data.keys():
-            self.printer_frames[name] = self.printer_frame(name,
-                                                           self.printer_data[name]["STATUS"],
-                                                           self.printer_data[name]["OTHER_DEETS"])
+            self.printers[name] = self.printer_frames(name)
 
         # TODO: update displayed printer details
 
-    def layout_update(self):
-        available_slot_coords = [coord for row in self.layout_dict["order"] for coord in row]
-        available_slot_coords.reverse()
-        for printer in self.printer_frames.keys():
-            self.layout_dict[available_slot_coords.pop()] = self.printer_frames[printer]
+    def printer_frames(self, name):
+        status_list = ["PRINTING", "AVAILABLE", "FINISHED", "OFFLINE", "UNKNOWN"]
+        frames = {}
+        for status in status_list:
+            frames[status] = self.state_frame(name, status)
+        return frames
 
-    def layout_make(self):
-        new_layout = []
-
-        for row in self.layout_dict["order"]:
-            new_layout.append([])
-            for key in row:
-                new_layout[-1].append(self.layout_dict[key])
-
-        return new_layout
-
-    def redraw(self, new_layout=None):
-        print("make")
-        if not new_layout:
-            new_layout = self.layout_make()
-
-        new_window = sg.Window("Test window2", copy.deepcopy(new_layout), resizable=False)
-        new_window.finalize()
-        new_window.maximize()
-        new_window.read(timeout=10)
-        new_window.read(timeout=10)  # ensure fully updated (some oddities in testing)
-
-        if self.window:
-            print("bin")
-            self.window.close()
-
-        self.window = new_window  # transfer to class variable
-        del new_window  # force tidy, just in case
-
-        self.window_update()
-
-    def window_update(self):
-        """ update progress bars and text etc without needing to refresh layour """
-        pam_progress = 69.420
-        if type(self.window.find_element("PAM_PROGBAR", silent_on_error=True)) is PySimpleGUI.ProgressBar:
-            self.window["PAM_PROGBAR"].update(current_count=int(pam_progress))
-
-    def printer_frame(self, printer_name, status, other_deets=None):  # TODO: other_deets
+    def state_frame(self, printer_name, status):
         printer_name = printer_name.upper()
         status = status.upper()
-
-        assert self.FRAME_SIZE is not None
 
         frame_layout = [
             [sg.Stretch(), sg.Text(f"{printer_name.capitalize()} | {status.capitalize()}"), sg.Stretch()]]
 
-        if status == "IDLE":
-            # add big print button
-            button_size = [0, 0]
-            button_size[0] = int(self.FRAME_SIZE[0] * 0.08)  # x scaling
-            button_size[1] = int(self.FRAME_SIZE[1] * 0.04)  # y scaling
-            print(button_size)
+        if status == "AVAILABLE":
+            # # add big print button
+            # button_size = [0, 0]
+            # button_size[0] = int(self.FRAME_SIZE[0] * 0.08)  # x scaling
+            # button_size[1] = int(self.FRAME_SIZE[1] * 0.04)  # y scaling
+            # print(button_size)
             layout_addition = [
                 [sg.VStretch()],
-                [sg.Stretch(), sg.Button("Print", key=f"{printer_name.upper()}_PRINT", size=tuple(button_size)), sg.Stretch()],
+                [sg.Stretch(), sg.Button("Print", key=f"{printer_name.upper()}_PRINT"), sg.Stretch()],
                 [sg.VStretch()]]
-        elif status == "RUNNING":
+        elif status == "PRINTING":
             # add running status, filename, temps, progress, cancel
             bar_size = [0, 0]
             bar_size[0] = int(self.FRAME_SIZE[0] * 0.75)  # x scaling
@@ -204,6 +133,48 @@ class WindozeManager:
             frame_layout.append(elem)
 
         return sg.Frame(printer_name.capitalize(), frame_layout, size=self.FRAME_SIZE)
+
+    def layout_update(self):
+        available_slot_coords = [coord for row in self.layout_dict["order"] for coord in row]
+        available_slot_coords.reverse()
+        for printer in self.printer_frames.keys():
+            self.layout_dict[available_slot_coords.pop()] = self.printer_frames[printer]
+
+    def layout_make(self):
+        new_layout = []
+
+        for row in self.layout_dict["order"]:
+            new_layout.append([])
+            for key in row:
+                new_layout[-1].append(self.layout_dict[key])
+
+        return new_layout
+
+    def redraw(self, new_layout=None):
+        print("make")
+        if not new_layout:
+            new_layout = self.layout_make()
+
+        new_window = sg.Window("Test window2", copy.deepcopy(new_layout), resizable=False)
+        new_window.finalize()
+        new_window.maximize()
+        new_window.read(timeout=10)
+        new_window.read(timeout=10)  # ensure fully updated (some oddities in testing)
+
+        if self.window:
+            print("bin")
+            self.window.close()
+
+        self.window = new_window  # transfer to class variable
+        del new_window  # force tidy, just in case
+
+        self.window_update()
+
+    def window_update(self):
+        """ update progress bars and text etc without needing to refresh layour """
+        pam_progress = 69.420
+        if type(self.window.find_element("PAM_PROGBAR", silent_on_error=True)) is PySimpleGUI.ProgressBar:
+            self.window["PAM_PROGBAR"].update(current_count=int(pam_progress))
 
     def read(self, time_out=None):
         return self.window.read(timeout=time_out)
