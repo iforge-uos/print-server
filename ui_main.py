@@ -32,10 +32,8 @@ def main():
     temp_window.read(timeout=20)
     temp_window.read(timeout=20)
 
-    backend = Backend("Ultimaker")
+    backend = Backend("Prusa")
 
-    printer_layout = [[]]
-    col_counter = 0
     frame_dict = {}
     for printer in backend.printers.keys():
         # states = ["available", "printing", "finished", "offline", "unknown"]
@@ -86,26 +84,26 @@ def main():
 
     layout = [
         [sg.Text('iForge 3D Print Automation System', justification='center', expand_x=True)],
-        [sg.pin(frame_dict["keith"]["available"]),
-         sg.pin(frame_dict["keith"]["printing"]),
-         sg.pin(frame_dict["keith"]["finished"]),
-         sg.pin(frame_dict["keith"]["offline"]),
-         sg.pin(frame_dict["keith"]["unknown"]),
-         sg.pin(frame_dict["pam"]["available"]),
-         sg.pin(frame_dict["pam"]["printing"]),
-         sg.pin(frame_dict["pam"]["finished"]),
-         sg.pin(frame_dict["pam"]["offline"]),
-         sg.pin(frame_dict["pam"]["unknown"])],
-        [sg.pin(frame_dict["rob"]["available"]),
-         sg.pin(frame_dict["rob"]["printing"]),
-         sg.pin(frame_dict["rob"]["finished"]),
-         sg.pin(frame_dict["rob"]["offline"]),
-         sg.pin(frame_dict["rob"]["unknown"]),
-         sg.pin(frame_dict["sarah"]["available"]),
-         sg.pin(frame_dict["sarah"]["printing"]),
-         sg.pin(frame_dict["sarah"]["finished"]),
-         sg.pin(frame_dict["sarah"]["offline"]),
-         sg.pin(frame_dict["sarah"]["unknown"])],
+        [sg.pin(frame_dict["Brunel"]["available"]),
+         sg.pin(frame_dict["Brunel"]["printing"]),
+         sg.pin(frame_dict["Brunel"]["finished"]),
+         sg.pin(frame_dict["Brunel"]["offline"]),
+         sg.pin(frame_dict["Brunel"]["unknown"]),
+         sg.pin(frame_dict["Davinci"]["available"]),
+         sg.pin(frame_dict["Davinci"]["printing"]),
+         sg.pin(frame_dict["Davinci"]["finished"]),
+         sg.pin(frame_dict["Davinci"]["offline"]),
+         sg.pin(frame_dict["Davinci"]["unknown"])],
+        [sg.pin(frame_dict["Lovelace"]["available"]),
+         sg.pin(frame_dict["Lovelace"]["printing"]),
+         sg.pin(frame_dict["Lovelace"]["finished"]),
+         sg.pin(frame_dict["Lovelace"]["offline"]),
+         sg.pin(frame_dict["Lovelace"]["unknown"]),
+         sg.pin(frame_dict["Tesla"]["available"]),
+         sg.pin(frame_dict["Tesla"]["printing"]),
+         sg.pin(frame_dict["Tesla"]["finished"]),
+         sg.pin(frame_dict["Tesla"]["offline"]),
+         sg.pin(frame_dict["Tesla"]["unknown"])],
     ]
 
     temp_window.close()
