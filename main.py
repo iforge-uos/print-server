@@ -175,6 +175,10 @@ if __name__ == '__main__':
     # secrets_key = args.secrets_key
 
     printer_type = input("Enter printer type: ('Prusa' or 'Ultimaker')\n").lower()
+    if printer_type == "p":
+        printer_type = "prusa"
+    elif printer_type == "u":
+        printer_type = "ultimaker"
 
     backend = Backend(printer_type=str(printer_type).capitalize())
 
