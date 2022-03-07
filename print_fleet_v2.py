@@ -3,6 +3,7 @@ from requests.exceptions import ConnectionError
 import json
 import time
 from cryptography.fernet import Fernet
+import multiprocessing
 
 
 class PrintFleet:
@@ -22,6 +23,13 @@ class PrintFleet:
         del self.printers
         pass
 
+    def thread_connect(self, param_dict):
+        client = octorest.OctoRest(
+            url="http://" + param_dict["ip"]
+                + ":" + param_dict["port"],
+            apikey=param_dict["apikey"])
+        param_dict["client"] = client
+
     def connect(self, printer_name):
         if printer_name == "all":
             for i_printer in self.printers.keys():
@@ -31,27 +39,39 @@ class PrintFleet:
         # TODO: implement something like this for offline printers only - needs to also handle printers going offline?
 
         else:
+            print(f"Connecting to {printer_name:10s}...\t", end="")
+            # self.printers[printer_name]["client"] = octorest.OctoRest(
+            #     url="http://" + self.printers[printer_name]["ip"]
+            #         + ":" + self.printers[printer_name]["port"],
+            #     apikey=self.printers[printer_name]["apikey"])
+
+            arg_return_dict = multiprocessing.Manager().dict()
+            arg_return_dict["ip"] = self.printers[printer_name]["ip"]
+            arg_return_dict["port"] = self.printers[printer_name]["port"]
+            arg_return_dict["apikey"] = self.printers[printer_name]["apikey"]
+            arg_return_dict["client"] = self.printers[printer_name]["client"]
+
+            p = multiprocessing.Process(target=self.thread_connect, args=(arg_return_dict,))
+            p.start()
+            p.join(2)
+
+            if p.is_alive():
+                p.terminate()
+                p.join()
+
+            self.printers[printer_name]["client"] = arg_return_dict["client"]
+
+            if not self.printers[printer_name]["client"]:
+                self.printers[printer_name]["details"] = {'state': "offline"}
+                # print("Failed")
+
             try:
-                print(f"Connecting to {printer_name:10s}...\t", end="")
-                self.printers[printer_name]["client"] = octorest.OctoRest(
-                    url="http://" + self.printers[printer_name]["ip"]
-                        + ":" + self.printers[printer_name]["port"],
-                    apikey=self.printers[printer_name]["apikey"])
-
+                # attempt to get job_info - will except if octopi is disconnected from printer?
                 self.printers[printer_name]["client"].job_info()
-
                 self.printers[printer_name]["details"] = {'state': "operational"}
                 print("Success")
-            except ConnectionError as e:
+            except AttributeError or ConnectionError or RuntimeError or TypeError as e:
                 # print(f"Connection error: {e}")
-                self.printers[printer_name]["details"] = {'state': "offline"}
-                print("Failed")
-            except RuntimeError as e:
-                # print(f"Runtime error: {e}")
-                self.printers[printer_name]["details"] = {'state': "offline"}
-                print("Failed")
-            except TypeError as e:
-                # print(f"Type error: {e}")
                 self.printers[printer_name]["details"] = {'state': "offline"}
                 print("Failed")
 
