@@ -160,6 +160,9 @@ def cancel_print(backend):
     if not requeue:
         print(f"Please enter failure comment for printer: {printing_printers[n]}")
         comment = input()
+        while len(comment) < 4:
+            print(f"please enter a more helpful comment\n")
+            comment = input()
 
     backend.cancel_print(printing_printers[n], requeue, comment)
 
