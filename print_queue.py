@@ -54,7 +54,9 @@ class PrintQueue:
 
     def download_selected(self):
         filename = self.selected.loc[:, 'Unique ID'].values[0] + '.gcode'
-        print(f"Downloading: {self.selected.loc[:, 'Name'].values[0]} - {time.strftime('%H:%M:%S', time.gmtime(self.selected.loc[:, 'Print Time'].values[0] * 24 * 60 * 60))} - {self.selected.loc[:, 'Date Added'].values[0]}, {filename}... ", end="")
+        print(
+            f"Downloading: {self.selected.loc[:, 'Name'].values[0]} - {time.strftime('%H:%M:%S', time.gmtime(self.selected.loc[:, 'Print Time'].values[0] * 24 * 60 * 60))} - {self.selected.loc[:, 'Date Added'].values[0]}, {filename}... ",
+            end="")
         self.gcode_drive.download_file(self.selected.loc[:, 'Unique ID'].values[0], filename)
         print("Complete")
         return filename
@@ -71,7 +73,8 @@ class PrintQueue:
         self.selected.loc[:, "Printed colour"] = "auto-print"
         self.selected.loc[:, "time print put on"] = start_time.strftime("%d/%m/%Y %H:%M:%S")
         self.selected.loc[:, "time print due"] = end_time.strftime("%d/%m/%Y %H:%M:%S")
-        self.selected.loc[:, "ETA"] = f"Started: {start_time.strftime('%H:%M:%S')}\nDue at: {end_time.strftime('%H:%M:%S')}"
+        self.selected.loc[:,
+        "ETA"] = f"Started: {start_time.strftime('%H:%M:%S')}\nDue at: {end_time.strftime('%H:%M:%S')}"
         self.print_sheet.set_row(self.selected)
 
     def mark_result(self, printer_name, result, requeue=False, comment=""):
@@ -94,7 +97,8 @@ class PrintQueue:
             self.selected.loc[:, "Status"] = result
             t_now = datetime.datetime.now()
             self.selected.loc[:, "ETA"] = t_now.strftime("%d/%m/%Y")
-            self.selected.loc[:, "time taken for print"] = str(t_now - sheets2date(float(self.selected.loc[:, "Date Added"])))[:-7]  # without microseconds
+            self.selected.loc[:, "time taken for print"] = (t_now - sheets2date(
+                float(self.selected.loc[:, "Date Added"]))).total_seconds() / datetime.timedelta(days=1).total_seconds()
 
             if current_notes:
                 self.selected.loc[:, "Notes"] = f"{current_notes}\n{comment}"
