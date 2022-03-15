@@ -109,7 +109,10 @@ class PrintFleet:
             # print(f"{printer_name:8s}\t-\t{self.printers[printer_name]['details']['state']}")
 
     def upload(self, printer_name, filename, path=""):
-        return self.printers[printer_name]["client"].upload(filename, path=path)
+        print(f"Uploading {filename} to {printer_name}...", end="")
+        val = self.printers[printer_name]["client"].upload(filename, path=path)
+        print(" Complete")
+        return val
 
     def run_print(self, printer_name, filename):
         self.printers[printer_name]["client"].select(filename, print=True)
