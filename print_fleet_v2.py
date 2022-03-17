@@ -53,7 +53,7 @@ class PrintFleet:
 
             p = multiprocessing.Process(target=self.thread_connect, args=(arg_return_dict,))
             p.start()
-            p.join(2)
+            p.join(5)
 
             if p.is_alive():
                 p.terminate()

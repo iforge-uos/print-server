@@ -2,12 +2,16 @@ import time
 from main_backend import Backend
 
 
-def get_number_in_list(elem_list):
-    i = 0
+def print_list(elem_list):
     for i, elem in enumerate(elem_list):
         print(f"{i}.\t{elem}")
         if i > 15:
             break
+
+
+def get_number_in_list(elem_list):
+    i = 0
+    print_list(elem_list)
 
     print("Enter number to select ('c' to cancel)")
     n = None
@@ -21,16 +25,27 @@ def get_number_in_list(elem_list):
             if n == "l":
                 return -2
 
-        if n in list(range(i+1)):
+        if n in range(len(elem_list)):
             return n
 
         print(f"{n} not recognised, try again")
 
 
 def list_printers(backend):
-    print(f"Current printer status':")
+    print(f"Printers:")
     for printer in backend.fleet.printers.keys():
         print(f"{printer:20s} - {backend.fleet.printers[printer]['details']['state']}")
+
+    print("\nJobs:")
+
+    joblist = backend.queue.get_jobs()
+    if joblist.shape[0] == 0:  # if none free, wait and restart loop
+        print("\nNo jobs queued, try again later")
+    else:
+        print_list([f"{job[0]:20s}"
+                    f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
+                    f"\t{job[7]}"
+                    for job in joblist.loc[:].values.tolist()])
 
 
 def print_print(backend):
@@ -168,6 +183,7 @@ def cancel_print(backend):
 
     print(f"Go and check {printing_printers[n]} is clear and ready to print again.")
     time.sleep(10)
+
 
 if __name__ == '__main__':
     # parser = argparse.ArgumentParser(description='iForge 3D Print Queue Management System')
