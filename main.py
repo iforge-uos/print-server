@@ -2,12 +2,16 @@ import time
 from main_backend import Backend
 
 
-def get_number_in_list(elem_list):
-    i = 0
+def print_list(elem_list):
     for i, elem in enumerate(elem_list):
         print(f"{i}.\t{elem}")
         if i > 15:
             break
+
+
+def get_number_in_list(elem_list):
+    i = 0
+    print_list(elem_list)
 
     print("Enter number to select ('c' to cancel)")
     n = None
@@ -21,16 +25,27 @@ def get_number_in_list(elem_list):
             if n == "l":
                 return -2
 
-        if n in list(range(i+1)):
+        if n in range(len(elem_list)):
             return n
 
         print(f"{n} not recognised, try again")
 
 
 def list_printers(backend):
-    print(f"Current printer status':")
+    print(f"Printers:")
     for printer in backend.fleet.printers.keys():
         print(f"{printer:20s} - {backend.fleet.printers[printer]['details']['state']}")
+
+    print("\nJobs:")
+
+    joblist = backend.queue.get_jobs()
+    if joblist.shape[0] == 0:  # if none free, wait and restart loop
+        print("\nNo jobs queued, try again later")
+    else:
+        print_list([f"{job[0]:20s}"
+                    f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
+                    f"\t{job[7]}"
+                    for job in joblist.loc[:].values.tolist()])
 
 
 def print_print(backend):
@@ -160,11 +175,15 @@ def cancel_print(backend):
     if not requeue:
         print(f"Please enter failure comment for printer: {printing_printers[n]}")
         comment = input()
+        while len(comment) < 4:
+            print(f"please enter a more helpful comment\n")
+            comment = input()
 
     backend.cancel_print(printing_printers[n], requeue, comment)
 
     print(f"Go and check {printing_printers[n]} is clear and ready to print again.")
     time.sleep(10)
+
 
 if __name__ == '__main__':
     # parser = argparse.ArgumentParser(description='iForge 3D Print Queue Management System')
@@ -175,6 +194,10 @@ if __name__ == '__main__':
     # secrets_key = args.secrets_key
 
     printer_type = input("Enter printer type: ('Prusa' or 'Ultimaker')\n").lower()
+    if printer_type == "p":
+        printer_type = "prusa"
+    elif printer_type == "u":
+        printer_type = "ultimaker"
 
     backend = Backend(printer_type=str(printer_type).capitalize())
 
