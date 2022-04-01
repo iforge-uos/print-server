@@ -42,7 +42,7 @@ def list_printers(backend):
     if joblist.shape[0] == 0:  # if none free, wait and restart loop
         print("\nNo jobs queued, try again later")
     else:
-        print_list([f"{job[0]:20s}"
+        print_list([f"{job[2].split(',')[-1][1:-2][:32]:32s}"
                     f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
                     f"\t{job[7]}"
                     for job in joblist.loc[:].values.tolist()])
@@ -68,10 +68,10 @@ def print_print(backend):
 
     print("\nCurrent joblist:")
 
-    n = get_number_in_list([f"{job[0]:20s}"
+    n = get_number_in_list([f"{job[2].split(',')[-1][1:-2][:32]:32s}"
                             f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
                             f"\t{job[7]}"
-                            for job in joblist.loc[:].values.tolist()])
+                            for job in joblist.loc[:].values.tolist()]) 
     if n == -1:  # cancel action
         return
     if n == -2:  # levelling print

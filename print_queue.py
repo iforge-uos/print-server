@@ -53,7 +53,7 @@ class PrintQueue:
             raise ValueError(f"Multiple {printer_name}s in dataset")
 
     def download_selected(self):
-        filename = self.selected.loc[:, 'Unique ID'].values[0] + '.gcode'
+        filename = self.selected.loc[:, 'Gcode Filename'].values[0].split(',')[-1][1:-2]
         print(
             f"Downloading: {self.selected.loc[:, 'Name'].values[0]} - {time.strftime('%H:%M:%S', time.gmtime(self.selected.loc[:, 'Print Time'].values[0] * 24 * 60 * 60))} - {self.selected.loc[:, 'Date Added'].values[0]}, {filename}...\t",
             end="")
