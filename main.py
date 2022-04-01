@@ -193,13 +193,14 @@ if __name__ == '__main__':
     # args = parser.parse_args()
     # secrets_key = args.secrets_key
 
-    printer_type = input("Enter printer type: ('Prusa' or 'Ultimaker')\n").lower()
-    if printer_type == "p":
-        printer_type = "prusa"
-    elif printer_type == "u":
-        printer_type = "ultimaker"
+    printer_list = input("Enter printer type: ('Prusa' or 'Ultimaker')\n").lower()
+    # support shortcuts for common selections
+    if printer_list == "p":
+        printer_list = "prusa"
+    elif printer_list == "u":
+        printer_list = "ultimaker"
 
-    backend = Backend(printer_type=str(printer_type).capitalize())
+    backend = Backend(printer_list=str(printer_list).capitalize())
 
     # start with some information
     backend.update()
