@@ -86,6 +86,15 @@ class PrintFleet:
             if self.printers[printer_name]["details"]["state"] != "offline":
                 try:
                     self.printers[printer_name]["details"] = self.printers[printer_name]["client"].job_info()
+                    # Can't be bothered dealing with this state, just wait until it has cleared
+                    while self.printers[printer_name]["details"]['state'] == "Connecting":
+                        time.sleep(0.5)
+                        self.printers[printer_name]["details"] = self.printers[printer_name]["client"].job_info()
+
+                    if "error" in self.printers[printer_name]["details"]:
+                        self.printers[printer_name]["details"]['state'] = "error"
+                    else:
+                        self.printers[printer_name]["details"]["status"] = self.printers[printer_name]['client'].printer()
 
                     # fix bad standards from octorest
                     self.printers[printer_name]["details"]["state"] = self.printers[printer_name]["details"]["state"].lower()
