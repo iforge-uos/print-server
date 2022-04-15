@@ -7,12 +7,13 @@ import os
 
 
 class Backend:
-    def __init__(self, printer_type):
+    def __init__(self, printer_list):
         self.secrets = {}
         self.load_secrets()
 
-        self.printers = self.secrets["printers"][printer_type]
-        self.queue = print_queue.PrintQueue(google_secrets=self.secrets["google_secrets"], printer_type=printer_type)
+        self.printers = self.secrets["printers"][printer_list]
+        self.printer_type = list(set([val["type"] for i, val in self.printers.items()]))[0].capitalize()
+        self.queue = print_queue.PrintQueue(google_secrets=self.secrets["google_secrets"], printer_type=self.printer_type)
         print("Performing initial printer connection, this may take some time")
         self.fleet = print_fleet.PrintFleet(self.printers)
         print("Complete")
