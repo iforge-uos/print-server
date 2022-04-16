@@ -2,12 +2,14 @@ import PySimpleGUI as sg
 
 sg.theme("Dark Blue 12")
 
+WINDOW_SIZE = (800, 480)
+
 BUTTON_WIDTH = 6
 BUTTON_HEIGHT = 4
 bs = (BUTTON_WIDTH, BUTTON_HEIGHT)
 
 
-def main(passcode, header="iForge 3D Print System", quitcode=42069):
+def main(passcode, header="iForge 3D Print System", quitcode=42069, suppress_fullscreen=False):
     passcode = str(passcode)
     quitcode = str(quitcode)
     if not passcode.isnumeric():
@@ -37,10 +39,12 @@ def main(passcode, header="iForge 3D Print System", quitcode=42069):
     window = sg.Window("Passcode",
                        element_justification="center",
                        enable_close_attempted_event=True,
+                       size=WINDOW_SIZE,
                        resizable=True)
     window.layout(layout)
     window.finalize()
-    window.maximize()
+    if not suppress_fullscreen:
+        window.maximize()
 
     while True:
         window.bring_to_front()

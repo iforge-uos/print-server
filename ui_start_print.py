@@ -3,6 +3,7 @@ import time
 import datetime
 
 TIMEOUT = 60
+WINDOW_SIZE = (800, 480)
 
 
 def convert_times(raw_time):
@@ -10,20 +11,24 @@ def convert_times(raw_time):
     return str(datetime.timedelta(days=raw_time)).split(".")[0]
 
 
-def main(backend, printer):
+def main(backend, printer, suppress_fullscreen=False):
     backend.update()
     joblist = backend.queue.get_jobs()
     if joblist.shape[0] <= 0:
         return -1
+    print(joblist)
     column_headings = ["Gcode Filename", "Print Time", "Name", "iRep Check", "Filament (g)"]
     layout = [
         [sg.T("Start Print", justification='center', expand_x=True)],
-        [sg.T("Printer:")],
-        [sg.Table([["Filename", "Print Time", "User", "Rep", "Filament (g)"]],
+        [sg.Table([column_headings],
                   select_mode=sg.TABLE_SELECT_MODE_BROWSE,  # noqa
                   enable_events=True,
                   key="print_table",
-                  headings=column_headings)],
+                  headings=column_headings,
+                  num_rows=25,
+                  col_widths=[36, 8, 16, 10, 10],
+                  auto_size_columns=False,
+                  display_row_numbers=True)],
         [sg.B("Cancel"), sg.B("Refresh"), sg.B("Print")]
     ]
 
@@ -31,9 +36,11 @@ def main(backend, printer):
                        layout,
                        element_justification="center",
                        modal=True,
+                       size=WINDOW_SIZE,
                        resizable=True)
     window.finalize()
-    window.maximize()
+    if not suppress_fullscreen:
+        window.maximize()
 
     logout_timer = time.time()
 

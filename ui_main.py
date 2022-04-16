@@ -29,7 +29,7 @@ colours = {
     "blank": None
 }
 
-TEST_MODE = False
+TEST_MODE = True
 
 
 def main(printer_type):
@@ -45,9 +45,11 @@ def main(printer_type):
 
     temp_window = sg.Window("Loading",
                             temp_layout,
-                            resizable=False)
+                            resizable=True,
+                            size=WINDOW_SIZE)
     temp_window.finalize()
-    temp_window.maximize()
+    if not TEST_MODE:
+        temp_window.maximize()
     # Two reads to make sure it actually goes fullscreen, sometimes dodgy...
     temp_window.read(timeout=20)
     temp_window.read(timeout=20)
@@ -169,7 +171,8 @@ def main(printer_type):
         if event in (sg.TIMEOUT_EVENT, "next_page", "prev_page"):
             t0 = time.time()
             backend.update()
-            print(f"Update took {time.time()-t0:.2f}s")
+            if TEST_MODE:
+                print(f"Update took {time.time()-t0:.2f}s")
             joblist = backend.queue.get_jobs()
             # print(f"[INFO] joblist: {joblist}")
             for y in range(PRINTER_ROWS):
@@ -228,10 +231,13 @@ def main(printer_type):
                             f" remaining")
                         window[f"{loc}_{printer_state}_progbar"].update(
                             int(backend.fleet.printers[printer]['details']['progress']['completion'] or 0))
+                        window[f"{loc}_cancel"].update(disabled=False)
 
                     if printer_state == "finished":
                         window[f"{loc}_{printer_state}_filename"].update(
                             f"{backend.fleet.printers[printer]['details']['job']['file']['display']}")
+                        window[f"{loc}_complete"].update(disabled=False)
+                        window[f"{loc}_fail"].update(disabled=False)
 
                     if printer_state == "offline":
                         if "error" in backend.printers[printer]['details']:
@@ -273,17 +279,23 @@ def main(printer_type):
         if printer:
             if event_components[-1] == "print":
                 print(f"[INFO] Printing: {loc} -> {printer}")
-                ui_start_print.main(backend, printer)
-                sg.popup_quick_message("Starting print, please wait", background_color="dark green")
+                start_choice = ui_start_print.main(backend, printer, TEST_MODE)
+                print(start_choice)
+                if start_choice == "Print":
+                    sg.popup_quick_message("Starting print, please wait", background_color="dark green")
 
             # Event handling
             if event_components[-1] == "complete":
                 print(f"[INFO] Print success: {loc} -> {printer}")
+                window[f"{loc}_complete"].update(disabled=True)
+                window[f"{loc}_fail"].update(disabled=True)
                 sg.popup_quick_message("Marking print successful, please wait", background_color="dark violet")
                 backend.end_print(printer, "Complete", False, "")
 
             if event_components[-1] == "fail":
                 print(f"[INFO] Print fail: {loc} -> {printer}")
+                window[f"{loc}_complete"].update(disabled=True)
+                window[f"{loc}_fail"].update(disabled=True)
                 requeue = sg.popup_yes_no("Should this print be re-queued?", title="Requeue?")
                 requeue = True if requeue == "Yes" else False  # Convert to boolean
                 if not requeue:
@@ -295,6 +307,7 @@ def main(printer_type):
 
             if event_components[-1] == "cancel":
                 print(f"[INFO] Cancelling: {loc} -> {printer}")
+                window[f"{loc}_cancel"].update(disabled=True)
                 backend.update()
                 if backend.printers[printer]['details']['state'] != "printing":
                     sg.popup_quick_message(f"Cannot cancel, {printer} not printing!")
@@ -334,7 +347,7 @@ def main(printer_type):
 
 if __name__ == '__main__':
     while True:
-        if ui_passcode.main(MASTER_PASSCODE):
+        if ui_passcode.main(MASTER_PASSCODE, suppress_fullscreen=TEST_MODE):
             main("Prusa")
         else:
             break
