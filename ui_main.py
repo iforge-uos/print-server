@@ -6,6 +6,7 @@ import ui_finish_print
 import datetime
 import time
 import logging
+import json
 
 MASTER_PASSCODE = "69420"  # TODO: actually set something in secrets xD
 # TODO: match safe code: 436743
@@ -30,10 +31,8 @@ colours = {
     "blank": None
 }
 
-TEST_MODE = True
 
-
-def main(printer_type):
+def main(printer_type, test_mode=False):
     logging.info("UI Starting")
     sg.theme("Dark Blue 12")
     sg.DEFAULT_FONT = ("Helvetica", 18)
@@ -50,7 +49,7 @@ def main(printer_type):
                             resizable=True,
                             size=WINDOW_SIZE)
     temp_window.finalize()
-    if not TEST_MODE:
+    if not test_mode:
         temp_window.maximize()
     # Two reads to make sure it actually goes fullscreen, sometimes dodgy...
     temp_window.read(timeout=20)
@@ -127,7 +126,7 @@ def main(printer_type):
                        size=WINDOW_SIZE
                        )
     window.finalize()
-    if TEST_MODE:
+    if test_mode:
         window.set_title("iForge Printer Control TEST MODE")
         window.disable_debugger()
     else:
@@ -146,7 +145,7 @@ def main(printer_type):
     # Main event loop
     while True:
         # Ensure window at front
-        if not TEST_MODE:
+        if not test_mode:
             window.bring_to_front()
         # Timeout for refreshing stats
         event, values = window.read(timeout=REFRESH_INTERVAL)
@@ -174,7 +173,7 @@ def main(printer_type):
         if event in (sg.TIMEOUT_EVENT, "next_page", "prev_page"):
             t0 = time.time()
             backend.update()
-            if TEST_MODE:
+            if test_mode:
                 logging.debug(f"Update took {time.time()-t0:.2f}s")
             joblist = backend.queue.get_jobs()
             logging.debug(joblist)
@@ -288,7 +287,7 @@ def main(printer_type):
         if printer:
             if event_components[-1] == "print":
                 logging.info(f"Print {loc}, {printer}")
-                start_choice = ui_start_print.main(backend, printer, TEST_MODE)
+                start_choice = ui_start_print.main(backend, printer, test_mode)
                 print(start_choice)
                 if start_choice == "Print":
                     logging.info("Print started")
@@ -310,9 +309,11 @@ def main(printer_type):
                 requeue = True if requeue == "Yes" else False  # Convert to boolean
                 if not requeue:
                     comment = sg.popup_get_text("Comment", default_text="Please talk to a 3DP team member") or ""
+                    sg.popup_quick_message("Marking print failed, please wait", background_color="dark turquoise")
                 else:
                     comment = ""
-                sg.popup_quick_message("Marking print failed, please wait", background_color="dark turquoise")
+                    sg.popup_quick_message("Requeueing print, please wait", background_color="dark turquoise")
+                logging.info(f"Fail confirmed {loc}, {printer}, requeue={requeue}, comment={comment}")
                 backend.end_print(printer, "Failed", requeue, comment)
 
             if event_components[-1] == "cancel":
@@ -321,6 +322,7 @@ def main(printer_type):
                 backend.update()
                 if backend.printers[printer]['details']['state'] != "printing":
                     sg.popup_quick_message(f"Cannot cancel, {printer} not printing!")
+                    logging.warning("Cancel failed")
                 else:
                     confirm = sg.popup_yes_no("Are you sure you want to cancel this print?", title="Confirm cancel?")
                     if confirm == "Yes":
@@ -344,7 +346,7 @@ def main(printer_type):
         if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
             logging.debug("Timeout reset")
             logout_timer = time.time()
-            # if TEST_MODE:
+            # if test_mode:
             #     print('Event = ', event)
             #     print('Values Dictionary (key = value):')
             #     for key in values:
@@ -365,10 +367,17 @@ if __name__ == '__main__':
                         level=logging.INFO)
 
     logging.info("ui_main.py started")
+
+    with open("ui_config.json", "r") as config_file:
+        config = json.load(config_file)
+        logging.info(f"Config loaded, {config}")
+        printer_type = config["printer_type"]
+        test_mode = config["test_mode"]
+
     while True:
-        if ui_passcode.main(MASTER_PASSCODE, suppress_fullscreen=TEST_MODE):
+        if ui_passcode.main(MASTER_PASSCODE, suppress_fullscreen=test_mode):
             logging.info("Password success")
-            main("Prusa")
+            main(printer_type, test_mode)
             logging.info("Eggo")
         else:
             logging.info("Exit")
