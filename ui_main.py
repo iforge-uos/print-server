@@ -22,7 +22,7 @@ Y_BUFFER = 25
 FRAME_SIZE = (WINDOW_SIZE[0]//PRINTER_COLS - X_BUFFER*PRINTER_COLS,
               WINDOW_SIZE[1]//PRINTER_ROWS - Y_BUFFER*PRINTER_ROWS)
 
-colours = {
+frame_background_colours = {
     "available": None,
     "printing": None,
     "finished": None,
@@ -32,7 +32,13 @@ colours = {
 }
 
 
-def main(printer_type, test_mode=False):
+def main():
+    with open("ui_config.json", "r") as config_file:
+        config = json.load(config_file)
+        logging.info(f"Config loaded, {config}")
+        printer_type = config["printer_type"]
+        test_mode = config["test_mode"]
+
     logging.info("UI Starting")
     sg.theme("Dark Blue 12")
     sg.DEFAULT_FONT = ("Helvetica", 18)
@@ -100,17 +106,17 @@ def main(printer_type, test_mode=False):
 
             frame_dict[f"{x}_{y}"] = {
                 "available":
-                    sg.Frame(f"{x}_{y}", available_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_available", background_color=colours["available"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="light blue"),  # noqa
+                    sg.Frame(f"{x}_{y}", available_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_available", background_color=frame_background_colours["available"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="light blue"),  # noqa
                 "printing":
-                    sg.Frame(f"{x}_{y}", printing_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_printing", background_color=colours["printing"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="light coral"),  # noqa
+                    sg.Frame(f"{x}_{y}", printing_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_printing", background_color=frame_background_colours["printing"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="light coral"),  # noqa
                 "finished":
-                    sg.Frame(f"{x}_{y}", finished_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_finished", background_color=colours["finished"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="light green"),  # noqa
+                    sg.Frame(f"{x}_{y}", finished_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_finished", background_color=frame_background_colours["finished"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="light green"),  # noqa
                 "offline":
-                    sg.Frame(f"{x}_{y}", offline_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_offline", background_color=colours["offline"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="hot pink"),  # noqa
+                    sg.Frame(f"{x}_{y}", offline_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_offline", background_color=frame_background_colours["offline"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="hot pink"),  # noqa
                 "unknown":
-                    sg.Frame(f"{x}_{y}", unknown_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_unknown", background_color=colours["unknown"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="orange red"),  # noqa
+                    sg.Frame(f"{x}_{y}", unknown_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_unknown", background_color=frame_background_colours["unknown"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="orange red"),  # noqa
                 "blank":
-                    sg.Frame(f"{x}_{y}", blank_layout, size=FRAME_SIZE, visible=True, key=f"{x}_{y}_frame_blank", background_color=colours["blank"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="grey")  # noqa
+                    sg.Frame(f"{x}_{y}", blank_layout, size=FRAME_SIZE, visible=True, key=f"{x}_{y}_frame_blank", background_color=frame_background_colours["blank"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="grey")  # noqa
             }
             for key in frame_dict[f"{x}_{y}"]:
                 # Comment after following line disables inspection because PyCharm is too dumb in some cases
@@ -360,7 +366,6 @@ def main(printer_type, test_mode=False):
 
 
 if __name__ == '__main__':
-
     # Enable logging to file
     logging.basicConfig(filename="ui_main.log", encoding="utf-8",
                         format="%(asctime)s %(levelname)s:%(name)s:%(module)s:%(message)s",
@@ -371,13 +376,12 @@ if __name__ == '__main__':
     with open("ui_config.json", "r") as config_file:
         config = json.load(config_file)
         logging.info(f"Config loaded, {config}")
-        printer_type = config["printer_type"]
         test_mode = config["test_mode"]
 
     while True:
         if ui_passcode.main(MASTER_PASSCODE, suppress_fullscreen=test_mode):
             logging.info("Password success")
-            main(printer_type, test_mode)
+            main()
             logging.info("Eggo")
         else:
             logging.info("Exit")
