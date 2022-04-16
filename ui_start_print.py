@@ -11,6 +11,10 @@ def convert_times(raw_time):
 
 
 def main(backend, printer):
+    backend.update()
+    joblist = backend.queue.get_jobs()
+    if joblist.shape[0] <= 0:
+        return -1
     column_headings = ["Gcode Filename", "Print Time", "Name", "iRep Check", "Filament (g)"]
     layout = [
         [sg.T("Start Print", justification='center', expand_x=True)],
@@ -33,9 +37,7 @@ def main(backend, printer):
 
     logout_timer = time.time()
 
-    joblist = backend.queue.get_jobs()
-
-    joblist.loc[:, "Print Time"] = joblist.apply(lambda x: str(datetime.timedelta(days=x["Print Time"])).split(".")[0],
+    joblist.loc[:, "Print Time"] = joblist.apply(lambda x: str(datetime.timedelta(days=int(x["Print Time"]))).split(".")[0],
                                                  axis=1)
     joblist.loc[:, "Gcode Filename"] = joblist.apply(lambda x: x["Gcode Filename"].split(',')[-1][1:-2], axis=1)
 
@@ -53,6 +55,8 @@ def main(backend, printer):
         if event in ("Refresh", sg.TIMEOUT_EVENT):
             backend.update()
             joblist = backend.queue.get_jobs()
+            if joblist.shape[0] <= 0:
+                break
             joblist.loc[:, "Print Time"] = joblist.apply(
                 lambda x: str(datetime.timedelta(days=x["Print Time"])).split(".")[0], axis=1)
             joblist.loc[:, "Gcode Filename"] = joblist.apply(lambda x: x["Gcode Filename"].split(',')[-1][1:-2], axis=1)
@@ -63,7 +67,8 @@ def main(backend, printer):
             print(f"Printing {values['print_table']} on {printer}")
             backend.queue.select_by_id(joblist.loc[:, "Unique ID"].values[values['print_table'][0]])
             backend.do_print(printer)
-            break
+            window.close()
+            return 1
 
         if event not in (sg.TIMEOUT_EVENT,):
             logout_timer = time.time()
