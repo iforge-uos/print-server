@@ -105,7 +105,7 @@ def main(printer_type):
                 "unknown":
                     sg.Frame(f"{x}_{y}", unknown_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_unknown", background_color=colours["unknown"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="orange red"),  # noqa
                 "blank":
-                    sg.Frame(f"{x}_{y}", blank_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_blank", background_color=colours["blank"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="grey")  # noqa
+                    sg.Frame(f"{x}_{y}", blank_layout, size=FRAME_SIZE, visible=True, key=f"{x}_{y}_frame_blank", background_color=colours["blank"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="grey")  # noqa
             }
             for key in frame_dict[f"{x}_{y}"]:
                 # Comment after following line disables inspection because PyCharm is too dumb in some cases
@@ -295,17 +295,21 @@ def main(printer_type):
 
             if event_components[-1] == "cancel":
                 print(f"[INFO] Cancelling: {loc} -> {printer}")
-                confirm = sg.popup_yes_no("Are you sure you want to cancel this print?", title="Confirm cancel?")
-                if confirm == "Yes":
-                    requeue = sg.popup_yes_no("Should this print be re-queued?", title="Requeue?")
-                    requeue = True if requeue == "Yes" else False  # Convert to boolean
-                    if not requeue:
-                        comment = sg.popup_get_text("Comment", default_text="Please talk to a 3DP team member") or ""
-                    else:
-                        comment = ""
-                    sg.popup_quick_message("Cancelling print, please wait", background_color="maroon")
-                    backend.cancel_print(printer, requeue, comment)
-                    time.sleep(0.5)
+                backend.update()
+                if backend.printers[printer]['details']['state'] != "printing":
+                    sg.popup_quick_message(f"Cannot cancel, {printer} not printing!")
+                else:
+                    confirm = sg.popup_yes_no("Are you sure you want to cancel this print?", title="Confirm cancel?")
+                    if confirm == "Yes":
+                        requeue = sg.popup_yes_no("Should this print be re-queued?", title="Requeue?")
+                        requeue = True if requeue == "Yes" else False  # Convert to boolean
+                        if not requeue:
+                            comment = sg.popup_get_text("Comment", default_text="Please talk to a 3DP team member") or ""
+                        else:
+                            comment = ""
+                        sg.popup_quick_message("Cancelling print, please wait", background_color="maroon")
+                        backend.cancel_print(printer, requeue, comment)
+                        time.sleep(0.5)
 
             if event_components[-1] == "reconnect":
                 sg.popup_quick_message("Reconnecting, please wait", background_color="dark cyan")
