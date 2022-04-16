@@ -5,6 +5,7 @@ import ui_start_print
 import ui_finish_print
 import datetime
 import time
+import logging
 
 MASTER_PASSCODE = "69420"  # TODO: actually set something in secrets xD
 # TODO: match safe code: 436743
@@ -33,6 +34,7 @@ TEST_MODE = True
 
 
 def main(printer_type):
+    logging.info("UI Starting")
     sg.theme("Dark Blue 12")
     sg.DEFAULT_FONT = ("Helvetica", 18)
 
@@ -56,7 +58,9 @@ def main(printer_type):
 
     # Start backend, slow and blocking procedure!
     backend = Backend(printer_type)
+    logging.info("Backend started")
     printers = list(backend.printers)
+    logging.debug(printers)
 
     states = ["available", "printing", "finished", "offline", "unknown", "blank"]
 
@@ -137,28 +141,27 @@ def main(printer_type):
     window["page"].update(value=f"Page {page+1}/{pages}")
     window["prev_page"].update(disabled=True if page == 0 else False)
     window["next_page"].update(disabled=True if page == pages - 1 else False)
+    logging.info("UI initialised")
 
-    # This is an Event Loop
+    # Main event loop
     while True:
-        if TEST_MODE:
-            print(f"T: {time.time()}")
         # Ensure window at front
         if not TEST_MODE:
             window.bring_to_front()
         # Timeout for refreshing stats
         event, values = window.read(timeout=REFRESH_INTERVAL)
+        logging.debug(event)
 
         # Exit events
         if event in (None, 'Exit'):
-            print("[LOG] Clicked Exit!")
             break
 
         if event == "next_page":
-            print("[LOG] Next page")
+            logging.info("Next page")
             page += 1
 
         if event == "prev_page":
-            print("[LOG] Previous page")
+            logging.info("Previous page")
             page -= 1
 
         # Update page buttons and counter
@@ -172,8 +175,9 @@ def main(printer_type):
             t0 = time.time()
             backend.update()
             if TEST_MODE:
-                print(f"Update took {time.time()-t0:.2f}s")
+                logging.debug(f"Update took {time.time()-t0:.2f}s")
             joblist = backend.queue.get_jobs()
+            logging.debug(joblist)
             # print(f"[INFO] joblist: {joblist}")
             for y in range(PRINTER_ROWS):
                 for x in range(PRINTER_COLS):
@@ -194,6 +198,7 @@ def main(printer_type):
 
                     # Ensure correct frames are visible
                     if not window[f"{loc}_frame_{printer_state}"].visible:
+                        logging.debug(f"changing {loc} to {printer_state}")
                         for state in states:
                             window[f"{loc}_frame_{state}"].update(visible=False)
                         window[f"{loc}_frame_{printer_state}"].update(visible=True)
@@ -220,7 +225,7 @@ def main(printer_type):
                             window[f"{loc}_print"].update(disabled=True)
 
                     if printer_state == "printing":
-                        # print(f"[INFO] Details: {backend.fleet.printers[printer]['details']}")
+                        # logging.debug(f"Printer details: {backend.fleet.printers[printer]['details']}")
                         window[f"{loc}_{printer_state}_filename"].update(
                             f"{backend.fleet.printers[printer]['details']['job']['file']['display']}")
                         window[f"{loc}_{printer_state}_time"].update(
@@ -241,6 +246,8 @@ def main(printer_type):
 
                     if printer_state == "offline":
                         if "error" in backend.printers[printer]['details']:
+                            logging.warning(f"Octoprint error, {backend.printers[printer]['details']['error']}")
+                            logging.debug(backend.fleet.printers[printer]['details'])
                             window[f"{loc}_{printer_state}_cause"].update(
                                 f"Cause: {backend.printers[printer]['details']['error']}\n"
                                 f"Please contact an administrator")
@@ -249,6 +256,8 @@ def main(printer_type):
                                 f"Cause: Lost connection, try reconnecting later")
 
                     if printer_state == "unknown":
+                        logging.warning(f"Unknown state: {backend.printers[printer]['details']['state']}")
+                        logging.debug(backend.fleet.printers[printer]['details'])
                         window[f"{loc}_{printer_state}_details"].update(
                             f"Details:\n"
                             f"State: {backend.printers[printer]['details']['state']}\n"
@@ -278,22 +287,23 @@ def main(printer_type):
 
         if printer:
             if event_components[-1] == "print":
-                print(f"[INFO] Printing: {loc} -> {printer}")
+                logging.info(f"Print {loc}, {printer}")
                 start_choice = ui_start_print.main(backend, printer, TEST_MODE)
                 print(start_choice)
                 if start_choice == "Print":
+                    logging.info("Print started")
                     sg.popup_quick_message("Starting print, please wait", background_color="dark green")
 
             # Event handling
             if event_components[-1] == "complete":
-                print(f"[INFO] Print success: {loc} -> {printer}")
+                logging.info(f"Complete {loc}, {printer}")
                 window[f"{loc}_complete"].update(disabled=True)
                 window[f"{loc}_fail"].update(disabled=True)
                 sg.popup_quick_message("Marking print successful, please wait", background_color="dark violet")
                 backend.end_print(printer, "Complete", False, "")
 
             if event_components[-1] == "fail":
-                print(f"[INFO] Print fail: {loc} -> {printer}")
+                logging.info(f"Fail {loc}, {printer}")
                 window[f"{loc}_complete"].update(disabled=True)
                 window[f"{loc}_fail"].update(disabled=True)
                 requeue = sg.popup_yes_no("Should this print be re-queued?", title="Requeue?")
@@ -306,7 +316,7 @@ def main(printer_type):
                 backend.end_print(printer, "Failed", requeue, comment)
 
             if event_components[-1] == "cancel":
-                print(f"[INFO] Cancelling: {loc} -> {printer}")
+                logging.info(f"Cancel {loc}, {printer}")
                 window[f"{loc}_cancel"].update(disabled=True)
                 backend.update()
                 if backend.printers[printer]['details']['state'] != "printing":
@@ -321,15 +331,18 @@ def main(printer_type):
                         else:
                             comment = ""
                         sg.popup_quick_message("Cancelling print, please wait", background_color="maroon")
+                        logging.info(f"Cancel confirmed {loc}, {printer}, requeue={requeue}, comment={comment}")
                         backend.cancel_print(printer, requeue, comment)
                         time.sleep(0.5)
 
             if event_components[-1] == "reconnect":
+                logging.info(f"Reconnect {loc}, {printer}")
                 sg.popup_quick_message("Reconnecting, please wait", background_color="dark cyan")
                 backend.connect()
 
         # Auto-logout timer
         if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
+            logging.debug("Timeout reset")
             logout_timer = time.time()
             # if TEST_MODE:
             #     print('Event = ', event)
@@ -338,16 +351,25 @@ def main(printer_type):
             #         print(key, ' = ', values[key])
         else:
             if time.time() - logout_timer > TIMEOUT:
-                print("[LOG] Timed out!")
+                logging.info("Timed out")
                 break
 
-    print("Eggo.")
     window.close()
 
 
 if __name__ == '__main__':
+
+    # Enable logging to file
+    logging.basicConfig(filename="ui_main.log", encoding="utf-8",
+                        format="%(asctime)s %(levelname)s:%(name)s:%(module)s:%(message)s",
+                        level=logging.INFO)
+
+    logging.info("ui_main.py started")
     while True:
         if ui_passcode.main(MASTER_PASSCODE, suppress_fullscreen=TEST_MODE):
+            logging.info("Password success")
             main("Prusa")
+            logging.info("Eggo")
         else:
+            logging.info("Exit")
             break

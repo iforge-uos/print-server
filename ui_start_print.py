@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 import time
 import datetime
+import logging
 
 TIMEOUT = 60
 WINDOW_SIZE = (800, 480)
@@ -12,6 +13,7 @@ def convert_times(raw_time):
 
 
 def main(backend, printer, suppress_fullscreen=False):
+    logging.info("Starting")
     backend.update()
     joblist = backend.queue.get_jobs()
     if joblist.shape[0] <= 0:
@@ -50,16 +52,18 @@ def main(backend, printer, suppress_fullscreen=False):
 
     window["print_table"].update(joblist[column_headings].values.tolist())
     window["print_table"].update(select_rows=[0])
+    logging.info("Started")
 
     while True:
         window.bring_to_front()
         event, values = window.read(timeout=30000)
 
         if event in (None, 'Exit', "Cancel"):
-            print("[LOG] Clicked Exit!")
+            logging.info("Exit")
             break
 
         if event in ("Refresh", sg.TIMEOUT_EVENT):
+            logging.info("Refresh")
             backend.update()
             joblist = backend.queue.get_jobs()
             if joblist.shape[0] <= 0:
@@ -71,17 +75,19 @@ def main(backend, printer, suppress_fullscreen=False):
             window["print_table"].update(select_rows=[0])
 
         if event == "Print":
-            print(f"Printing {values['print_table']} on {printer}")
+            logging.info(f"Print confirmed {values['print_table']} on {printer}")
             backend.queue.select_by_id(joblist.loc[:, "Unique ID"].values[values['print_table'][0]])
             backend.do_print(printer)
             window.close()
+            logging.info("Done")
             return 1
 
         if event not in (sg.TIMEOUT_EVENT,):
+            logging.debug("Timeout reset")
             logout_timer = time.time()
         else:
             if time.time() - logout_timer > TIMEOUT:
-                print("[LOG] Print menu timed out")
+                logging.info("Timed out")
                 break
 
     window.close()

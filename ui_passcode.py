@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+import logging
 
 sg.theme("Dark Blue 12")
 
@@ -10,6 +11,7 @@ bs = (BUTTON_WIDTH, BUTTON_HEIGHT)
 
 
 def main(passcode, header="iForge 3D Print System", quitcode=42069, suppress_fullscreen=False):
+    logging.info("Starting")
     passcode = str(passcode)
     quitcode = str(quitcode)
     if not passcode.isnumeric():
@@ -46,25 +48,31 @@ def main(passcode, header="iForge 3D Print System", quitcode=42069, suppress_ful
     if not suppress_fullscreen:
         window.maximize()
 
+    logging.info("Started")
+
     while True:
         window.bring_to_front()
         event, values = window.read(timeout=1000)
 
         if event == sg.WINDOW_CLOSE_ATTEMPTED_EVENT and sg.popup_yes_no('Do you really want to exit?') == 'Yes':
+            logging.info("Window closed")
             break
 
         if event == "Clear":
+            logging.info("Clear")
             passcode_input = ""
         elif event in "1234567890":
             passcode_input += event
         elif event == "Submit":
             if passcode_input == passcode:
+                logging.info("Passcode correct")
                 return_value = True
                 break
             else:
                 if passcode_input == quitcode:
+                    logging.info("Quit code")
                     exit(0)
-
+                logging.info(f"Password incorrect - {passcode_input}")
                 window["-output_text-"]("WRONG - TRY AGAIN", text_color="red")
                 passcode_input = ""
 
