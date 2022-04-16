@@ -10,7 +10,7 @@ MASTER_PASSCODE = "69420"  # TODO: actually set something in secrets xD
 # TODO: match safe code: 436743
 
 TIMEOUT = 300  # Seconds to automatically log out
-REFRESH_INTERVAL = 5000  # Milliseconds between each refresh (remember: plus time it takes backend to refresh)
+REFRESH_INTERVAL = 1000  # Milliseconds between each refresh (remember: plus time it takes backend to refresh)
 
 PRINTER_ROWS = 2
 PRINTER_COLS = 2
@@ -29,10 +29,10 @@ colours = {
     "blank": None
 }
 
-TEST_MODE = True
+TEST_MODE = False
 
 
-def main():
+def main(printer_type):
     sg.theme("Dark Blue 12")
     sg.DEFAULT_FONT = ("Helvetica", 18)
 
@@ -53,7 +53,7 @@ def main():
     temp_window.read(timeout=20)
 
     # Start backend, slow and blocking procedure!
-    backend = Backend("Prusa")
+    backend = Backend(printer_type)
     printers = list(backend.printers)
 
     states = ["available", "printing", "finished", "offline", "unknown", "blank"]
@@ -67,27 +67,19 @@ def main():
         layout.append([])
         for x in range(PRINTER_COLS):
             # State 'available', printer idle and waiting for new print
-            available_layout = [[sg.Text("Hotend: "),
-                                 sg.Text(f"-0.00°C", key=f"{x}_{y}_available_hotend")],
-                                [sg.Text("Bed: "),
-                                 sg.Text(f"-0.00°C", key=f"{x}_{y}_available_bed")],
-                                [sg.B(f"print", key=f"{x}_{y}_print")]
-                                ]
+            available_layout = [[sg.B(f"print", key=f"{x}_{y}_print")]]
 
             printing_layout = [[sg.Text(f"LOADING", key=f"{x}_{y}_printing_filename")],
-                               [sg.Text("Hotend:\t"),
-                                sg.Text(f"-0.00°C / 0.00°C", key=f"{x}_{y}_printing_hotend")],
-                               [sg.Text("Bed:\t"),
-                                sg.Text(f"-0.00°C / 0.00°C", key=f"{x}_{y}_printing_bed")],
                                [sg.Text(f"Print time: 0:00:00 elapsed, approx 0:00:00 remaining", key=f"{x}_{y}_printing_time")],
                                [sg.Button("cancel", key=f"{x}_{y}_cancel")],
                                [sg.ProgressBar(max_value=100, orientation='h', key=f"{x}_{y}_printing_progbar", size=(100,20), expand_x=True)],
                                ]
 
-            finished_layout = [[sg.Text(f"Finished: N/A", key=f"{x}_{y}_finished_filename")],
-                               [sg.Text(f"Was this print successful?")],
-                               [sg.Button("success", key=f"{x}_{y}_success"),
-                                sg.Button("fail", key=f"{x}_{y}_fail")]
+            finished_layout = [[sg.Text("Print Finished:")],
+                               [sg.Text(f"N/A", key=f"{x}_{y}_finished_filename")],
+                               [sg.Text(f"Was the print successful?")],
+                               [sg.Button("Complete", key=f"{x}_{y}_complete"),
+                                sg.Button("Failed", key=f"{x}_{y}_fail")]
                                ]
 
             offline_layout = [[sg.Text("Printer Offline")],
@@ -103,17 +95,17 @@ def main():
 
             frame_dict[f"{x}_{y}"] = {
                 "available":
-                    sg.Frame(f"{x}_{y}", available_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_available", background_color=colours["available"]),  # noqa
+                    sg.Frame(f"{x}_{y}", available_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_available", background_color=colours["available"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="light blue"),  # noqa
                 "printing":
-                    sg.Frame(f"{x}_{y}", printing_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_printing", background_color=colours["printing"]),  # noqa
+                    sg.Frame(f"{x}_{y}", printing_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_printing", background_color=colours["printing"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="light coral"),  # noqa
                 "finished":
-                    sg.Frame(f"{x}_{y}", finished_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_finished", background_color=colours["finished"]),  # noqa
+                    sg.Frame(f"{x}_{y}", finished_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_finished", background_color=colours["finished"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="light green"),  # noqa
                 "offline":
-                    sg.Frame(f"{x}_{y}", offline_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_offline", background_color=colours["offline"]),  # noqa
+                    sg.Frame(f"{x}_{y}", offline_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_offline", background_color=colours["offline"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="hot pink"),  # noqa
                 "unknown":
-                    sg.Frame(f"{x}_{y}", unknown_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_unknown", background_color=colours["unknown"]),  # noqa
+                    sg.Frame(f"{x}_{y}", unknown_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_unknown", background_color=colours["unknown"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="orange red"),  # noqa
                 "blank":
-                    sg.Frame(f"{x}_{y}", blank_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_blank", background_color=colours["blank"])  # noqa
+                    sg.Frame(f"{x}_{y}", blank_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_blank", background_color=colours["blank"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="grey")  # noqa
             }
             for key in frame_dict[f"{x}_{y}"]:
                 # Comment after following line disables inspection because PyCharm is too dumb in some cases
@@ -175,9 +167,11 @@ def main():
 
         # Events that trigger main display updates
         if event in (sg.TIMEOUT_EVENT, "next_page", "prev_page"):
+            t0 = time.time()
             backend.update()
+            print(f"Update took {time.time()-t0:.2f}s")
             joblist = backend.queue.get_jobs()
-            print(f"[INFO] joblist: {joblist}")
+            # print(f"[INFO] joblist: {joblist}")
             for y in range(PRINTER_ROWS):
                 for x in range(PRINTER_COLS):
                     loc = f"{x}_{y}"
@@ -202,40 +196,58 @@ def main():
                         window[f"{loc}_frame_{printer_state}"].update(visible=True)
 
                     # Update frame title to match printer and state
-                    window[f"{loc}_frame_{printer_state}"].update(
-                        value=f"{printer if printer else 'N/A'} | {backend.printers[printer]['details']['state'].title() if printer else 'None'}")
+                    if printer:
+                        if 'status' in backend.fleet.printers[printer]['details'] and 'bed' in backend.fleet.printers[printer]['details']['status']['temperature']:
+                            window[f"{loc}_frame_{printer_state}"].update(
+                                value=f"  {printer}  |  "
+                                      f"B: {int(backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual'])}°C  "
+                                      f"H: {int(backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['actual'])}°C  |  "
+                                      f"{backend.printers[printer]['details']['state'].title()}  ")
+                        else:
+                            window[f"{loc}_frame_{printer_state}"].update(
+                                value=f"  {printer}  |  "
+                                      f"{backend.printers[printer]['details']['state'].title()}  ")
+                    else:
+                        window[f"{loc}_frame_{printer_state}"].update(value=f"N/A | None")
 
                     if printer_state == "available":
-                        window[f"{loc}_{printer_state}_hotend"].update(f"{backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['actual']}°C")
-                        window[f"{loc}_{printer_state}_bed"].update(f"{backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual']}°C")
-
                         if joblist.shape[0] > 0:
                             window[f"{loc}_print"].update(disabled=False)
                         else:
                             window[f"{loc}_print"].update(disabled=True)
 
                     if printer_state == "printing":
-                        print(f"[INFO] Details: {backend.fleet.printers[printer]['details']}")
-                        window[f"{loc}_{printer_state}_filename"].update(f"{backend.fleet.printers[printer]['details']['job']['file']['display']}")
-                        window[f"{loc}_{printer_state}_hotend"].update(f"{backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['actual']}°C / {backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['target']}°C")
-                        window[f"{loc}_{printer_state}_bed"].update(f"{backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual']}°C / {backend.fleet.printers[printer]['details']['status']['temperature']['bed']['target']}°C")
-                        window[f"{loc}_{printer_state}_time"].update(f"Print time: {str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['progress']['printTime'] or 0))} elapsed, approx {str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['progress']['printTimeLeft'] or 0))} remaining")
-                        window[f"{loc}_{printer_state}_progbar"].update(int(backend.fleet.printers[printer]['details']['progress']['completion'] or 0))
+                        # print(f"[INFO] Details: {backend.fleet.printers[printer]['details']}")
+                        window[f"{loc}_{printer_state}_filename"].update(
+                            f"{backend.fleet.printers[printer]['details']['job']['file']['display']}")
+                        window[f"{loc}_{printer_state}_time"].update(
+                            f"Print time: "
+                            f"{str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['progress']['printTime'] or 0))}"
+                            f" elapsed, approx "
+                            f"{str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['progress']['printTimeLeft'] or 0))}" 
+                            f" remaining")
+                        window[f"{loc}_{printer_state}_progbar"].update(
+                            int(backend.fleet.printers[printer]['details']['progress']['completion'] or 0))
 
                     if printer_state == "finished":
-                        pass
+                        window[f"{loc}_{printer_state}_filename"].update(
+                            f"{backend.fleet.printers[printer]['details']['job']['file']['display']}")
 
                     if printer_state == "offline":
-                        if backend.printers[printer]['details']['state'] == "offline_after_error":
-                            window[f"{loc}_{printer_state}_cause"].update(f"Cause: {backend.printers[printer]['details']['error']}")
+                        if "error" in backend.printers[printer]['details']:
+                            window[f"{loc}_{printer_state}_cause"].update(
+                                f"Cause: {backend.printers[printer]['details']['error']}\n"
+                                f"Please contact an administrator")
                         else:
-                            window[f"{loc}_{printer_state}_cause"].update(f"Cause: Lost connection, try reconnecting later")
+                            window[f"{loc}_{printer_state}_cause"].update(
+                                f"Cause: Lost connection, try reconnecting later")
 
                     if printer_state == "unknown":
-                        window[f"{loc}_{printer_state}_details"].update(f"Details:\n"
-                                                                        f"State: {backend.printers[printer]['details']['state']}\n"
-                                                                        f"File: {backend.fleet.printers[printer]['details']['job']['file']['display']}\n"
-                                                                        f"{backend.fleet.printers[printer]}")
+                        window[f"{loc}_{printer_state}_details"].update(
+                            f"Details:\n"
+                            f"State: {backend.printers[printer]['details']['state']}\n"
+                            f"File: {backend.fleet.printers[printer]['details']['job']['file']['display']}\n"
+                            f"{backend.fleet.printers[printer]['details']}")
                         pass
 
                     if printer_state == "blank":
@@ -259,21 +271,54 @@ def main():
                 printer = None
 
         if printer:
-            if event_components == "print":
-                print(f"Printing: {loc} -> {printer}")
+            if event_components[-1] == "print":
+                print(f"[INFO] Printing: {loc} -> {printer}")
+                ui_start_print.main(backend, printer)
+                sg.popup_quick_message("Starting print, please wait", background_color="dark green")
 
             # Event handling
-            if event_components == "finish":
-                print(f"Printing: {loc} -> {printer}")
+            if event_components[-1] == "complete":
+                print(f"[INFO] Print success: {loc} -> {printer}")
+                sg.popup_quick_message("Marking print successful, please wait", background_color="dark violet")
+                backend.end_print(printer, "Complete", False, "")
+
+            if event_components[-1] == "fail":
+                print(f"[INFO] Print fail: {loc} -> {printer}")
+                requeue = sg.popup_yes_no("Should this print be re-queued?", title="Requeue?")
+                requeue = True if requeue == "Yes" else False  # Convert to boolean
+                if not requeue:
+                    comment = sg.popup_get_text("Comment", default_text="Please talk to a 3DP team member") or ""
+                else:
+                    comment = ""
+                sg.popup_quick_message("Marking print failed, please wait", background_color="dark turquoise")
+                backend.end_print(printer, "Failed", requeue, comment)
+
+            if event_components[-1] == "cancel":
+                print(f"[INFO] Cancelling: {loc} -> {printer}")
+                confirm = sg.popup_yes_no("Are you sure you want to cancel this print?", title="Confirm cancel?")
+                if confirm == "Yes":
+                    requeue = sg.popup_yes_no("Should this print be re-queued?", title="Requeue?")
+                    requeue = True if requeue == "Yes" else False  # Convert to boolean
+                    if not requeue:
+                        comment = sg.popup_get_text("Comment", default_text="Please talk to a 3DP team member") or ""
+                    else:
+                        comment = ""
+                    sg.popup_quick_message("Cancelling print, please wait", background_color="maroon")
+                    backend.cancel_print(printer, requeue, comment)
+                    time.sleep(0.5)
+
+            if event_components[-1] == "reconnect":
+                sg.popup_quick_message("Reconnecting, please wait", background_color="dark cyan")
+                backend.connect()
 
         # Auto-logout timer
         if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
             logout_timer = time.time()
-            if TEST_MODE:
-                print('Event = ', event)
-                print('Values Dictionary (key = value):')
-                for key in values:
-                    print(key, ' = ', values[key])
+            # if TEST_MODE:
+            #     print('Event = ', event)
+            #     print('Values Dictionary (key = value):')
+            #     for key in values:
+            #         print(key, ' = ', values[key])
         else:
             if time.time() - logout_timer > TIMEOUT:
                 print("[LOG] Timed out!")
@@ -286,6 +331,6 @@ def main():
 if __name__ == '__main__':
     while True:
         if ui_passcode.main(MASTER_PASSCODE):
-            main()
+            main("Prusa")
         else:
             break

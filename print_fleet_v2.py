@@ -90,11 +90,17 @@ class PrintFleet:
                     while self.printers[printer_name]["details"]['state'] == "Connecting":
                         time.sleep(0.5)
                         self.printers[printer_name]["details"] = self.printers[printer_name]["client"].job_info()
-
-                    if "error" in self.printers[printer_name]["details"]:
-                        self.printers[printer_name]["details"]['state'] = "error"
-                    else:
-                        self.printers[printer_name]["details"]["status"] = self.printers[printer_name]['client'].printer()
+                    try:
+                        if "error" in self.printers[printer_name]["details"]:
+                            self.printers[printer_name]["details"]['state'] = "error"
+                        elif self.printers[printer_name]["details"]["state"] == "Offline":
+                            self.printers[printer_name]["details"]['state'] = "offline"
+                            self.printers[printer_name]["details"]['error'] = "Printer disconnected"
+                        else:
+                            self.printers[printer_name]["details"]["status"] = self.printers[printer_name]['client'].printer()
+                    except RuntimeError as e:
+                        print(f"Last printer state: {self.printers[printer_name]}")
+                        raise e
 
                     # fix bad standards from octorest
                     self.printers[printer_name]["details"]["state"] = self.printers[printer_name]["details"]["state"].lower()
