@@ -2,7 +2,6 @@ import PySimpleGUI as sg
 from main_backend import Backend
 import ui_passcode
 import ui_start_print
-import ui_finish_print
 import datetime
 import time
 import logging
@@ -46,7 +45,7 @@ def main():
     # Temporary loading window while everything connects
     temp_layout = [
         [sg.VStretch()],
-        [sg.Stretch(), sg.Text('iForge 3D Print Automation System', justification='center', font=(24)), sg.Stretch()],
+        [sg.Stretch(), sg.Text('iForge 3D Print Automation System', justification='center', font=24), sg.Stretch()],
         [sg.Stretch(), sg.Text('Loading...'), sg.Stretch()],
         [sg.VStretch()]]
 
@@ -84,9 +83,11 @@ def main():
             available_layout = [[sg.B(f"print", key=f"{x}_{y}_print")]]
 
             printing_layout = [[sg.Text(f"LOADING", key=f"{x}_{y}_printing_filename")],
-                               [sg.Text(f"Print time: 0:00:00 elapsed, approx 0:00:00 remaining", key=f"{x}_{y}_printing_time")],
+                               [sg.Text(f"Print time: 0:00:00 elapsed, approx 0:00:00 remaining",
+                                        key=f"{x}_{y}_printing_time")],
                                [sg.Button("cancel", key=f"{x}_{y}_cancel")],
-                               [sg.ProgressBar(max_value=100, orientation='h', key=f"{x}_{y}_printing_progbar", size=(100,20), expand_x=True)],
+                               [sg.ProgressBar(max_value=100, orientation='h', key=f"{x}_{y}_printing_progbar",
+                                               size=(100, 20), expand_x=True)],
                                ]
 
             finished_layout = [[sg.Text("Print Finished:")],
@@ -102,24 +103,49 @@ def main():
 
             unknown_layout = [[sg.Text('ERROR: printer status unknown!')],
                               [sg.Text('Please notify system administrator')],
-                              [sg.Multiline('Details: ', key=f"{x}_{y}_unknown_details", disabled=True, expand_x=True, expand_y=True)]
+                              [sg.Multiline('Details: ', key=f"{x}_{y}_unknown_details",
+                                            disabled=True, expand_x=True, expand_y=True)]
                               ]
 
             blank_layout = []  # Intentionally left empty
 
             frame_dict[f"{x}_{y}"] = {
                 "available":
-                    sg.Frame(f"{x}_{y}", available_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_available", background_color=frame_background_colours["available"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="light blue"),  # noqa
+                    sg.Frame(f"{x}_{y}", available_layout, size=FRAME_SIZE, visible=False,
+                             key=f"{x}_{y}_frame_available",
+                             background_color=frame_background_colours["available"],  # noqa
+                             element_justification="center", title_location=sg.TITLE_LOCATION_TOP,  # noqa
+                             title_color="light blue"),
                 "printing":
-                    sg.Frame(f"{x}_{y}", printing_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_printing", background_color=frame_background_colours["printing"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="light coral"),  # noqa
+                    sg.Frame(f"{x}_{y}", printing_layout, size=FRAME_SIZE, visible=False,
+                             key=f"{x}_{y}_frame_printing",
+                             background_color=frame_background_colours["printing"],  # noqa
+                             element_justification="center", title_location=sg.TITLE_LOCATION_TOP,  # noqa
+                             title_color="light coral"),  # noqa
                 "finished":
-                    sg.Frame(f"{x}_{y}", finished_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_finished", background_color=frame_background_colours["finished"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="light green"),  # noqa
+                    sg.Frame(f"{x}_{y}", finished_layout, size=FRAME_SIZE, visible=False,
+                             key=f"{x}_{y}_frame_finished",
+                             background_color=frame_background_colours["finished"],  # noqa
+                             element_justification="center", title_location=sg.TITLE_LOCATION_TOP,  # noqa
+                             title_color="light green"),
                 "offline":
-                    sg.Frame(f"{x}_{y}", offline_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_offline", background_color=frame_background_colours["offline"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="hot pink"),  # noqa
+                    sg.Frame(f"{x}_{y}", offline_layout, size=FRAME_SIZE, visible=False,
+                             key=f"{x}_{y}_frame_offline",
+                             background_color=frame_background_colours["offline"],  # noqa
+                             element_justification="center", title_location=sg.TITLE_LOCATION_TOP,  # noqa
+                             title_color="hot pink"),
                 "unknown":
-                    sg.Frame(f"{x}_{y}", unknown_layout, size=FRAME_SIZE, visible=False, key=f"{x}_{y}_frame_unknown", background_color=frame_background_colours["unknown"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="orange red"),  # noqa
+                    sg.Frame(f"{x}_{y}", unknown_layout, size=FRAME_SIZE, visible=False,
+                             key=f"{x}_{y}_frame_unknown",
+                             background_color=frame_background_colours["unknown"],  # noqa
+                             element_justification="center", title_location=sg.TITLE_LOCATION_TOP,  # noqa
+                             title_color="orange red"),
                 "blank":
-                    sg.Frame(f"{x}_{y}", blank_layout, size=FRAME_SIZE, visible=True, key=f"{x}_{y}_frame_blank", background_color=frame_background_colours["blank"], element_justification="center", title_location=sg.TITLE_LOCATION_TOP, title_color="grey")  # noqa
+                    sg.Frame(f"{x}_{y}", blank_layout, size=FRAME_SIZE, visible=True,
+                             key=f"{x}_{y}_frame_blank",
+                             background_color=frame_background_colours["blank"],  # noqa
+                             element_justification="center", title_location=sg.TITLE_LOCATION_TOP,  # noqa
+                             title_color="grey")
             }
             for key in frame_dict[f"{x}_{y}"]:
                 # Comment after following line disables inspection because PyCharm is too dumb in some cases
@@ -214,7 +240,8 @@ def main():
 
                     # Update frame title to match printer and state
                     if printer:
-                        if 'status' in backend.fleet.printers[printer]['details'] and 'bed' in backend.fleet.printers[printer]['details']['status']['temperature']:
+                        if 'status' in backend.fleet.printers[printer]['details']\
+                                and 'bed' in backend.fleet.printers[printer]['details']['status']['temperature']:
                             window[f"{loc}_frame_{printer_state}"].update(
                                 value=f"  {printer}  |  "
                                       f"B: {int(backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual'])}°C  "
@@ -339,7 +366,7 @@ def main():
                         requeue = sg.popup_yes_no("Should this print be re-queued?", title="Requeue?")
                         requeue = True if requeue == "Yes" else False  # Convert to boolean
                         if not requeue:
-                            comment = sg.popup_get_text("Comment", default_text="Please talk to a 3DP team member") or ""
+                            comment = sg.popup_get_text("Comment", default_text="Please talk to the 3DP team") or ""
                         else:
                             comment = ""
                         sg.popup_quick_message("Cancelling print, please wait", background_color="maroon")
