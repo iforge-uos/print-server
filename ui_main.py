@@ -72,7 +72,10 @@ def main():
     # Set up printer grid
     frame_dict = {}
 
-    layout = [[sg.Text('iForge 3D Print Automation System', justification='center', expand_x=True)]]
+    layout = [
+        [sg.VStretch()],
+        [sg.Text('iForge 3D Print Automation System', justification='center', expand_x=True)],
+    ]
 
     for y in range(PRINTER_ROWS):
         layout.append([])
@@ -102,7 +105,7 @@ def main():
                               [sg.Multiline('Details: ', key=f"{x}_{y}_unknown_details", disabled=True, expand_x=True, expand_y=True)]
                               ]
 
-            blank_layout = []
+            blank_layout = []  # Intentionally left empty
 
             frame_dict[f"{x}_{y}"] = {
                 "available":
@@ -120,9 +123,10 @@ def main():
             }
             for key in frame_dict[f"{x}_{y}"]:
                 # Comment after following line disables inspection because PyCharm is too dumb in some cases
-                layout[y+1].append(sg.pin(frame_dict[f"{x}_{y}"][key]))  # noqa
+                layout[-1].append(sg.pin(frame_dict[f"{x}_{y}"][key]))  # noqa
     # Page buttons
     layout.append([sg.Button("<<<", key="prev_page"), sg.Text("Page 0", key="page"), sg.Button(">>>", key="next_page")])
+    layout.append([sg.VStretch()])
 
     temp_window.close()
 
