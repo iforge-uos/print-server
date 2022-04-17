@@ -10,16 +10,16 @@ import json
 MASTER_PASSCODE = "69420"  # TODO: actually set something in secrets xD
 # TODO: match safe code: 436743
 
-TIMEOUT = 300  # Seconds to automatically log out
+TIMEOUT = 28800  # Seconds to automatically log out, 300 = 5 minutes, 28800 = 8 hours
 REFRESH_INTERVAL = 1000  # Milliseconds between each refresh (remember: plus time it takes backend to refresh)
 
 PRINTER_ROWS = 2
 PRINTER_COLS = 2
 WINDOW_SIZE = (800, 480)
-X_BUFFER = 20
-Y_BUFFER = 25
-FRAME_SIZE = (WINDOW_SIZE[0]//PRINTER_COLS - X_BUFFER*PRINTER_COLS,
-              WINDOW_SIZE[1]//PRINTER_ROWS - Y_BUFFER*PRINTER_ROWS)
+X_BUFFER = 5
+Y_BUFFER = 5
+FRAME_SIZE = (WINDOW_SIZE[0]//PRINTER_COLS - 30 - X_BUFFER*(PRINTER_COLS-1),
+              WINDOW_SIZE[1]//PRINTER_ROWS - 40 - Y_BUFFER*(PRINTER_ROWS-1))
 
 frame_background_colours = {
     "available": None,
