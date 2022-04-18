@@ -4,14 +4,16 @@ import json
 import time
 from cryptography.fernet import Fernet
 import os
+import logging
 
 
 class Backend:
-    def __init__(self, printer_list):
+    def __init__(self, printer_type):
+        logging.info(f"Starting backend, {printer_type}")
         self.secrets = {}
         self.load_secrets()
 
-        self.printers = self.secrets["printers"][printer_list]
+        self.printers = self.secrets["printers"][printer_type]
         self.printer_type = list(set([val["type"] for i, val in self.printers.items()]))[0].capitalize()
         self.queue = print_queue.PrintQueue(google_secrets=self.secrets["google_secrets"], printer_type=self.printer_type)
         print("Performing initial printer connection, this may take some time")

@@ -9,6 +9,13 @@ import logging
 OCTOREST_TIMEOUT = 5.00  # Timeout for Octoprint connection, seconds
 
 
+def thread_connect(param_dict):
+    client = octorest.OctoRest(
+        url=f"http://{param_dict['ip']}:{param_dict['port']}",
+        apikey=param_dict['apikey'])
+    param_dict['client'] = client
+
+
 class PrintFleet:
     def __init__(self, printer_access_dict):
         self.printers = printer_access_dict
@@ -25,12 +32,6 @@ class PrintFleet:
     def __exit__(self, exc_type, exc_val, exc_tb):
         del self.printers
         pass
-
-    def thread_connect(self, param_dict):
-        client = octorest.OctoRest(
-            url=f"http://{param_dict['ip']}:{param_dict['port']}",
-            apikey=param_dict['apikey'])
-        param_dict['client'] = client
 
     def connect(self, printer_name):
         if printer_name == "all":
@@ -55,7 +56,7 @@ class PrintFleet:
             arg_return_dict['client'] = self.printers[printer_name]['client']
 
             # Multiprocessing used so the process can be killed if the printer doesn't connect within a set time
-            p = multiprocessing.Process(target=self.thread_connect, args=(arg_return_dict,))
+            p = multiprocessing.Process(target=thread_connect, args=(arg_return_dict,))
             p.start()
             p.join(OCTOREST_TIMEOUT)
 
@@ -172,7 +173,7 @@ if __name__ == "__main__":
     printer_secrets = json.loads(decrypted)['printers']
 
     fleet = PrintFleet(printer_secrets)
-    fleet.connect()
+
     for name, data in fleet.printers.items():
         print(f"{name}:\n{data}")
     fleet.update("all")

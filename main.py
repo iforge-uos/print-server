@@ -200,7 +200,7 @@ if __name__ == '__main__':
     elif printer_list == "u":
         printer_list = "ultimaker"
 
-    backend = Backend(printer_list=str(printer_list).capitalize())
+    backend = Backend(printer_type=str(printer_list).capitalize())
 
     # start with some information
     backend.update()
