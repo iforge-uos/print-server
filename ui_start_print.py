@@ -30,7 +30,8 @@ def main(backend, printer, suppress_fullscreen=False):
                   num_rows=25,
                   col_widths=[36, 8, 16, 10, 10],
                   auto_size_columns=False,
-                  display_row_numbers=True)],
+                  display_row_numbers=True,
+                  justification='center')],
         [sg.B("Cancel"), sg.B("Refresh"), sg.B("Print")]
     ]
 
@@ -46,13 +47,14 @@ def main(backend, printer, suppress_fullscreen=False):
 
     logout_timer = time.time()
 
-    joblist.loc[:, "Print Time"] = joblist.apply(lambda x: str(datetime.timedelta(days=int(x["Print Time"]))).split(".")[0],
-                                                 axis=1)
+    joblist.loc[:, "Print Time"] = joblist.apply(
+        lambda x: str(datetime.timedelta(days=int(x["Print Time"]))).split(".")[0], axis=1)
     joblist.loc[:, "Gcode Filename"] = joblist.apply(lambda x: x["Gcode Filename"].split(',')[-1][1:-2], axis=1)
 
     window["print_table"].update(joblist[column_headings].values.tolist())
     window["print_table"].update(select_rows=[0])
     logging.info("Started")
+    window.finalize()
 
     while True:
         window.bring_to_front()
@@ -76,6 +78,7 @@ def main(backend, printer, suppress_fullscreen=False):
 
         if event == "Print":
             logging.info(f"Print confirmed {values['print_table']} on {printer}")
+            sg.popup_quick_message("Starting print, please wait", background_color="dark green")
             backend.queue.select_by_id(joblist.loc[:, "Unique ID"].values[values['print_table'][0]])
             backend.do_print(printer)
             window.close()

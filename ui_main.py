@@ -6,6 +6,7 @@ import datetime
 import time
 import logging
 import json
+import os
 
 MASTER_PASSCODE = "69420"  # TODO: actually set something in secrets xD
 # TODO: match safe code: 436743
@@ -60,6 +61,14 @@ def main():
     temp_window.read(timeout=20)
     temp_window.read(timeout=20)
 
+    # Preload button images
+    images = {}
+    for file in os.listdir("images"):
+        if file.endswith(".png"):
+            image_path = os.path.join("images", file)
+            with open(image_path, 'rb') as image_file:
+                images[file] = image_file.read()
+
     # Start backend, slow and blocking procedure!
     backend = Backend(printer_type)
     logging.info("Backend started")
@@ -80,7 +89,11 @@ def main():
         layout.append([])
         for x in range(PRINTER_COLS):
             # State 'available', printer idle and waiting for new print
-            available_layout = [[sg.B(f"print", key=f"{x}_{y}_print")]]
+            available_layout = [  #[sg.B(f"", key=f"{x}_{y}_print", border_width=0,
+                                  #     button_color=(sg.theme_button_color()[1], sg.theme_background_color()),
+                                  #     image_filename="images/print.png", image_subsample=4)],
+                                [sg.Image(images['print.png'], enable_events=True, subsample=4, key=f"{x}_{y}_print",
+                                          metadata={'enabled': True})]]
 
             printing_layout = [[sg.Text(f"LOADING", key=f"{x}_{y}_printing_filename")],
                                [sg.Text(f"Print time: 0:00:00 elapsed, approx 0:00:00 remaining",
@@ -256,9 +269,11 @@ def main():
 
                     if printer_state == "available":
                         if joblist.shape[0] > 0:
-                            window[f"{loc}_print"].update(disabled=False)
+                            window[f"{loc}_print"].update(source=images['print.png'], subsample=4)
+                            window[f"{loc}_print"].metadata['enabled'] = True
                         else:
-                            window[f"{loc}_print"].update(disabled=True)
+                            window[f"{loc}_print"].update(source=images['print_disabled.png'], subsample=4)
+                            window[f"{loc}_print"].metadata['enabled'] = False
 
                     if printer_state == "printing":
                         # logging.debug(f"Printer details: {backend.fleet.printers[printer]['details']}")
@@ -311,7 +326,7 @@ def main():
 
         # Check valid event, then get printer and location
         if len(event_components) >= 3 and event_components[0] != '':
-            print(event_components)
+            logging.debug(event_components)
             x = int(event_components[0])
             y = int(event_components[1])
             loc = f"{x}_{y}"
@@ -323,12 +338,15 @@ def main():
 
         if printer:
             if event_components[-1] == "print":
-                logging.info(f"Print {loc}, {printer}")
-                start_choice = ui_start_print.main(backend, printer, test_mode)
-                print(start_choice)
-                if start_choice == "Print":
-                    logging.info("Print started")
-                    sg.popup_quick_message("Starting print, please wait", background_color="dark green")
+                if window[f"{loc}_print"].metadata['enabled']:
+                    logging.info(f"Print {loc}, {printer}")
+                    window[f"{loc}_print"].update(source=images['print_clicked.png'], subsample=4)
+                    window.finalize()
+                    start_choice = ui_start_print.main(backend, printer, test_mode)
+                    logging.warning(start_choice)
+                    if start_choice > 0:
+                        logging.info("Print started")
+                        sg.popup_quick_message("Starting print, please wait", background_color="dark green")
 
             # Event handling
             if event_components[-1] == "complete":
