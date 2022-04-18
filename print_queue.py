@@ -4,6 +4,7 @@ from google_spreadsheet import Spreadsheet
 from google_drive import Drive
 import pandas as pd
 import time
+import logging
 
 
 def sheets2date(days_from_epoch):
@@ -43,6 +44,7 @@ class PrintQueue:
         self.update()
         self.selected = self.print_sheet.dataframe.loc[self.print_sheet.dataframe.loc[:, "Unique ID"] == id, :].copy()
         if self.selected.shape[0] > 1:  # multiple instances of id
+            logging.error("Multiple Unique IDs in dataset")
             raise ValueError("Multiple Unique IDs in dataset")
 
     def select_by_printer(self, printer_name):
@@ -50,6 +52,7 @@ class PrintQueue:
         filtered_queue = self.print_sheet.dataframe.loc[self.print_sheet.dataframe.loc[:, "Status"] == "Running", :]
         self.selected = filtered_queue.loc[self.print_sheet.dataframe.loc[:, "Printer"] == printer_name, :].copy()
         if self.selected.shape[0] > 1:  # multiple instances of printer
+            logging.error(f"Multiple {printer_name}s in dataset")
             raise ValueError(f"Multiple {printer_name}s in dataset")
 
     def download_selected(self):
@@ -73,8 +76,8 @@ class PrintQueue:
         self.selected.loc[:, "Printed colour"] = "auto-print"
         self.selected.loc[:, "time print put on"] = start_time.strftime("%d/%m/%Y %H:%M:%S")
         self.selected.loc[:, "time print due"] = end_time.strftime("%d/%m/%Y %H:%M:%S")
-        self.selected.loc[:,
-        "ETA"] = f"Started: {start_time.strftime('%H:%M:%S')}\nDue at: {end_time.strftime('%H:%M:%S')}"
+        self.selected.loc[:, "ETA"] = \
+            f"Started: {start_time.strftime('%H:%M:%S')}\nDue at: {end_time.strftime('%H:%M:%S')}"
         self.print_sheet.set_row(self.selected)
 
     def mark_result(self, printer_name, result, requeue=False, comment=""):

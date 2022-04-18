@@ -7,18 +7,13 @@ TIMEOUT = 60
 WINDOW_SIZE = (800, 480)
 
 
-def convert_times(raw_time):
-    td = datetime.timedelta(days=raw_time)
-    return str(datetime.timedelta(days=raw_time)).split(".")[0]
-
-
 def main(backend, printer, suppress_fullscreen=False):
     logging.info("Starting")
     backend.update()
     joblist = backend.queue.get_jobs()
     if joblist.shape[0] <= 0:
         return -1
-    print(joblist)
+    logging.debug(joblist)
     column_headings = ["Gcode Filename", "Print Time", "Name", "iRep Check", "Filament (g)"]
     layout = [
         [sg.T("Start Print", justification='center', expand_x=True)],
@@ -35,7 +30,7 @@ def main(backend, printer, suppress_fullscreen=False):
         [sg.B("Cancel"), sg.B("Refresh"), sg.B("Print")]
     ]
 
-    window = sg.Window('iForge Printer Control',
+    window = sg.Window('Start Print',
                        layout,
                        element_justification="center",
                        modal=True,
@@ -79,7 +74,12 @@ def main(backend, printer, suppress_fullscreen=False):
         if event == "Print":
             logging.info(f"Print confirmed {values['print_table']} on {printer}")
             sg.popup_quick_message("Starting print, please wait", background_color="dark green")
-            backend.queue.select_by_id(joblist.loc[:, "Unique ID"].values[values['print_table'][0]])
+            try:
+                backend.queue.select_by_id(joblist.loc[:, "Unique ID"].values[values['print_table'][0]])
+            except ValueError:
+                sg.popup_quick_message("ERROR: Queue spreadsheet malformed", background_color="red")
+                window.close()
+                return -1
             backend.do_print(printer)
             window.close()
             logging.info("Done")

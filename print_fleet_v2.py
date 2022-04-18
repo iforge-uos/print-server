@@ -83,17 +83,17 @@ class PrintFleet:
                 print("Failed")
                 logging.info(f"Connection success but printer disconnected, {printer_name} at {self.printers[printer_name]['ip']}")
 
-            self.update(printer_name)
+            self.update(printer_name, [])
 
     def update(self, printer_name, queue_running=None):
-        if not queue_running:
+        if queue_running is None:
             queue_running = []
         
         # All printers -> update each in order
         if printer_name == "all":
-            for i_printer in self.printers.keys():
-                self.update(i_printer, queue_running)
-                return
+            for printer in self.printers:
+                self.update(printer, queue_running)
+            return
 
         if self.printers[printer_name]['details']['state'] != "offline":
             try:
@@ -176,6 +176,6 @@ if __name__ == "__main__":
 
     for name, data in fleet.printers.items():
         print(f"{name}:\n{data}")
-    fleet.update("all")
+    fleet.update("all", [])
     fleet.upload("rob", "testPrint_no_extrude.gcode")
     print("upload complete")
