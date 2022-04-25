@@ -72,6 +72,7 @@ def main():
     # Start backend, slow and blocking procedure!
     backend = Backend(printer_type)
     logging.info("Backend started")
+    backend.update()
     printers = list(backend.printers)
     logging.debug(printers)
 
@@ -134,7 +135,7 @@ def main():
                              key=f"{x}_{y}_frame_printing",
                              background_color=frame_background_colours["printing"],  # noqa
                              element_justification="center", title_location=sg.TITLE_LOCATION_TOP,  # noqa
-                             title_color="light coral"),  # noqa
+                             title_color="aquamarine"),  # noqa
                 "finished":
                     sg.Frame(f"{x}_{y}", finished_layout, size=FRAME_SIZE, visible=False,
                              key=f"{x}_{y}_frame_finished",
@@ -146,13 +147,13 @@ def main():
                              key=f"{x}_{y}_frame_offline",
                              background_color=frame_background_colours["offline"],  # noqa
                              element_justification="center", title_location=sg.TITLE_LOCATION_TOP,  # noqa
-                             title_color="hot pink"),
+                             title_color="orchid1"),
                 "unknown":
                     sg.Frame(f"{x}_{y}", unknown_layout, size=FRAME_SIZE, visible=False,
                              key=f"{x}_{y}_frame_unknown",
                              background_color=frame_background_colours["unknown"],  # noqa
                              element_justification="center", title_location=sg.TITLE_LOCATION_TOP,  # noqa
-                             title_color="orange red"),
+                             title_color="firebrick1"),
                 "blank":
                     sg.Frame(f"{x}_{y}", blank_layout, size=FRAME_SIZE, visible=True,
                              key=f"{x}_{y}_frame_blank",
@@ -225,6 +226,7 @@ def main():
             if test_mode:
                 logging.debug(f"Update took {time.time()-t0:.2f}s")
             joblist = backend.queue.get_jobs()
+            running_list = backend.queue.get_running_printers()
             logging.debug(joblist)
             # print(f"[INFO] joblist: {joblist}")
             for y in range(PRINTER_ROWS):
@@ -234,11 +236,14 @@ def main():
                     printer = printers[idx] if idx < len(printers) else None
 
                     if printer:
-                        printer_state = backend.printers[printer]['details']['state']
+                        with backend.fleet.printers_lock:
+                            printer_state = backend.printers[printer]['details']['state']
                         if printer_state in ("paused", "finishing", "cancelling"):  # Transient non-dangerous states
                             printer_state = "printing"
                         elif printer_state == "error":  # For offline_after_error
                             printer_state = "offline"
+                        elif printer_state == "operational":
+                            printer_state = "blank"
                         elif printer_state not in states:  # Unknown states - should be very rare
                             printer_state = "unknown"
                     else:
@@ -279,12 +284,12 @@ def main():
                         # logging.debug(f"Printer details: {backend.fleet.printers[printer]['details']}")
                         window[f"{loc}_{printer_state}_filename"].update(
                             f"{backend.fleet.printers[printer]['details']['job']['file']['display']}")
+                        # window[f"{loc}_{printer_state}_time"].update(
+                        #     f"Print time: {str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['progress']['printTime'] or 0))} elapsed, "
+                        #     f"approx {str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['progress']['printTimeLeft'] or 0))} remaining")
+                        eta_string = running_list[printer]['ETA'].replace('\n', ', ')
                         window[f"{loc}_{printer_state}_time"].update(
-                            f"Print time: "
-                            f"{str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['progress']['printTime'] or 0))}"
-                            f" elapsed, approx "
-                            f"{str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['progress']['printTimeLeft'] or 0))}" 
-                            f" remaining")
+                            f"{eta_string}, {backend.fleet.printers[printer]['details']['progress']['completion'] or 0:.1f}% complete")
                         window[f"{loc}_{printer_state}_progbar"].update(
                             int(backend.fleet.printers[printer]['details']['progress']['completion'] or 0))
                         window[f"{loc}_cancel"].update(disabled=False)
@@ -347,6 +352,11 @@ def main():
                     if start_choice > 0:
                         logging.info("Print started")
                         sg.popup_quick_message("Starting print, please wait", background_color="dark green")
+                        window[f"{loc}_print"].update(source=images['print_disabled.png'], subsample=4)
+                        window[f"{loc}_print"].metadata['enabled'] = False
+                        backend.queue.print_sheet.force_update_data()
+                    else:
+                        window[f"{loc}_print"].update(source=images['print_disabled.png'], subsample=4)
 
             # Event handling
             if event_components[-1] == "complete":
@@ -378,6 +388,7 @@ def main():
                 if backend.printers[printer]['details']['state'] != "printing":
                     sg.popup_quick_message(f"Cannot cancel, {printer} not printing!")
                     logging.warning("Cancel failed")
+                    backend.queue.print_sheet.force_update_data()
                 else:
                     confirm = sg.popup_yes_no("Are you sure you want to cancel this print?", title="Confirm cancel?")
                     if confirm == "Yes":
@@ -390,12 +401,13 @@ def main():
                         sg.popup_quick_message("Cancelling print, please wait", background_color="maroon")
                         logging.info(f"Cancel confirmed {loc}, {printer}, requeue={requeue}, comment={comment}")
                         backend.cancel_print(printer, requeue, comment)
-                        time.sleep(0.5)
+                        sg.popup_quick_message("Print cancelled", background_color="maroon")
+                        backend.queue.print_sheet.force_update_data()
 
             if event_components[-1] == "reconnect":
                 logging.info(f"Reconnect {loc}, {printer}")
                 sg.popup_quick_message("Reconnecting, please wait", background_color="dark cyan")
-                backend.connect()
+                backend.fleet.reconnect_offline()
 
         # Auto-logout timer
         if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):

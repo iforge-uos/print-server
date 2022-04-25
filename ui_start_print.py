@@ -16,17 +16,19 @@ def main(backend, printer, suppress_fullscreen=False):
     logging.debug(joblist)
     column_headings = ["Gcode Filename", "Print Time", "Name", "iRep Check", "Filament (g)"]
     layout = [
-        [sg.T("Start Print", justification='center', expand_x=True)],
+        [sg.T("Start Print", justification='center', expand_x=True, key="title")],
         [sg.Table([column_headings],
                   select_mode=sg.TABLE_SELECT_MODE_BROWSE,  # noqa
                   enable_events=True,
                   key="print_table",
                   headings=column_headings,
-                  num_rows=25,
-                  col_widths=[36, 8, 16, 10, 10],
+                  num_rows=24,
+                  # col_widths=[36, 8, 16, 10, 10],  # Full width
+                  col_widths=[10, 10, 10, 10, 10],  # With details pane
                   auto_size_columns=False,
                   display_row_numbers=True,
-                  justification='center')],
+                  justification='center'),
+         sg.Multiline("Click a print job to see details.", expand_x=True, expand_y=True, disabled=True, key="details")],
         [sg.B("Cancel"), sg.B("Refresh"), sg.B("Print")]
     ]
 
@@ -48,6 +50,7 @@ def main(backend, printer, suppress_fullscreen=False):
 
     window["print_table"].update(joblist[column_headings].values.tolist())
     window["print_table"].update(select_rows=[0])
+    window["title"].update(f"Start Print: {printer}")
     logging.info("Started")
     window.finalize()
 
@@ -84,6 +87,19 @@ def main(backend, printer, suppress_fullscreen=False):
             window.close()
             logging.info("Done")
             return 1
+
+        if event == "print_table":
+            job = joblist.iloc[values['print_table'][0]]
+            window["details"].update(
+                f"Print Details:\n"
+                f"User:\n\t{job['Name']}\n"
+                f"Rep Check:\n\t{job['iRep Check']}\n"
+                f"Filename:\n\t{job['Gcode Filename']}\n"
+                f"Print Time:\n\t{job['Print Time']}\n"
+                f"Filament:\n\t{job['Filament (g)']}g\n"
+                f"Project:\n\t{job['Project type']}\n"
+                f"Date added:\n\t{job['Date Added']}\n"
+                f"Notes:\n\t{job['Notes']}\n")
 
         if event not in (sg.TIMEOUT_EVENT,):
             logging.debug("Timeout reset")

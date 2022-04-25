@@ -1,3 +1,7 @@
+import copy
+import logging
+import random
+import threading
 import time
 
 import gspread
@@ -16,7 +20,12 @@ class Spreadsheet:
         self.gspread_creds = gspread.authorize(self.creds)
         self.queue_sheet = self.gspread_creds.open_by_key(self.vars["tokens"]["sheet"]).worksheet("Queue")
         self.dataframe = None
-        self.update_data()
+        self.last_update = None
+        self.df_lock = threading.Lock()
+
+        # Start update daemon
+        update_daemon = threading.Thread(target=self._update_data, daemon=True)
+        update_daemon.start()
 
     def __enter__(self):
         return self
@@ -25,52 +34,61 @@ class Spreadsheet:
         # disconnect?
         return
 
-    def update_data(self):
+    def get_data(self):
+        with self.df_lock:
+            df = copy.deepcopy(self.dataframe)
+        return df
+
+    def _update_data(self):
+        s = 5.0
         while True:
             try:
-                self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA", head=3))
-                break
+                with self.df_lock:
+                    self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA", head=3))
+                self.last_update = time.time()
+                time.sleep(5)
             except gspread.exceptions.APIError as e:
                 # temporary error, keep trying
-                print(f"APIError: {e}\nRetrying every 5 seconds")
-                time.sleep(5)
+                logging.warning(f"APIError: {e}\nRetrying in {s:.2f} seconds")
+                s += random.random() * 5.0  # Increase backoff
+                time.sleep(s)
 
-        # example usage
-        # print(self.dataframe)
-        # print(self.dataframe.loc[:, "prus"] == "Alistair Mitchell")
-        # print(self.dataframe.loc[self.dataframe.loc[:, "prus"] == "Alistair Mitchell"])
+    def force_update_data(self):
+        while True:
+            try:
+                with self.df_lock:
+                    self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA", head=3))
+                self.last_update = time.time()
+                return
+            except gspread.exceptions.APIError as e:
+                # temporary error, keep trying
+                logging.error(f"APIError: {e}\nForce update so not retrying")
+                with self.df_lock:
+                    self.dataframe = pd.DataFrame()
 
     def get_running(self):
+        df = self.get_data()
         # return dict of two dataframes, one for each printer type, for rows where "Status" column is "Running"
-        prusaDf = self.dataframe.loc[
-            (self.dataframe.loc[:, "Status"] == "Running") & (self.dataframe.loc[:, "Printer Type"] == "Prusa")]
-        ultiDf = self.dataframe.loc[
-            (self.dataframe.loc[:, "Status"] == "Running") & (self.dataframe.loc[:, "Printer Type"] == "Ultimaker")]
+        prusaDf = df.loc[(df.loc[:, "Status"] == "Running") & (df.loc[:, "Printer Type"] == "Prusa")]
+        ultiDf = df.loc[(df.loc[:, "Status"] == "Running") & (df.loc[:, "Printer Type"] == "Ultimaker")]
         return {"Prusa": prusaDf, "Ultimaker": ultiDf}
-
-    #####
 
     def get_queued(self):
+        df = self.get_data()
         # return dict of two dataframes, one for each printer type, for rows where "Status" column is "Queued"
-        prusaDf = self.dataframe.loc[
-            (self.dataframe.loc[:, "Status"] == "Queued") & (self.dataframe.loc[:, "Printer Type"] == "Prusa")]
-        ultiDf = self.dataframe.loc[
-            (self.dataframe.loc[:, "Status"] == "Queued") & (self.dataframe.loc[:, "Printer Type"] == "Ultimaker")]
+        prusaDf = df.loc[
+            (df.loc[:, "Status"] == "Queued") & (df.loc[:, "Printer Type"] == "Prusa")]
+        ultiDf = df.loc[
+            (df.loc[:, "Status"] == "Queued") & (df.loc[:, "Printer Type"] == "Ultimaker")]
         return {"Prusa": prusaDf, "Ultimaker": ultiDf}
-
-        # out_rows = []
-        # for cell in self.queue_sheet.findall(search_str):
-        #     if cell.col == 9:  # only search "Status" column
-        #         if printer_type == "" or printer_type == self.get_cell_value(cell.row, 10):
-        #             out_rows.append(self.queue_sheet.row_values(cell.row))
-        # return out_rows
 
     def get_cell_value(self, row, col):
         return self.queue_sheet.cell(row, col).value
 
     def set_row(self, data):
-        self.update_data()  # ensure data is up to date
-        row = self.dataframe.index[self.dataframe.loc[:, "Unique ID"] == data.loc[:, "Unique ID"].values[0]].tolist()
+        df = self.get_data()
+        # self.update_data()  # ensure data is up to date
+        row = df.index[df.loc[:, "Unique ID"] == data.loc[:, "Unique ID"].values[0]].tolist()
         if len(row) != 1:
             raise TypeError(f"Multiple rows match: {data.loc[:, 'Unique ID']}")
 
@@ -113,7 +131,7 @@ if __name__ == "__main__":
     secret_vars = json.loads(decrypted)
 
     queue = Spreadsheet(secret_vars["google_secrets"])
-    queue.update_data()
+    # queue.update_data()
     print(queue.get_running()["Prusa"]["Printer"].tolist())
 
     pd.reset_option('display.max_rows')
