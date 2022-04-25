@@ -36,7 +36,7 @@ class PrintFleet:
         self.connect("all")
 
         for printer in self.printers:
-            update_daemon = threading.Thread(target=self._update_printer_daemon, args=(printer,), daemon=True)
+            update_daemon = threading.Thread(target=self.update_printer, args=(printer,), daemon=True)
             update_daemon.start()
 
     def __enter__(self):
@@ -111,8 +111,8 @@ class PrintFleet:
             else:
                 self.queue_running = queue_running
 
-    def _update_printer_daemon(self, printer_name):
-        time.sleep(random.random())  # Spread out updates to improve overall responsiveness
+    def update_printer(self, printer_name, oneshot=False):
+        time.sleep(0.2)
         while True:
             with self.printers_lock:
                 printer_dict = copy.deepcopy(self.printers[printer_name])
@@ -157,6 +157,9 @@ class PrintFleet:
 
             with self.printers_lock:
                 self.printers[printer_name] = printer_dict
+
+            if oneshot:
+                return
 
             time.sleep(PRINTER_UPDATE_INTERVAL)
 
