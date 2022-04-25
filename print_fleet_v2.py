@@ -137,8 +137,8 @@ class PrintFleet:
                         else:
                             printer_dict['details']['status'] = printer_dict['client'].printer()
                     except RuntimeError as e:
-                        logging.error(f"Last printer state: {printer_dict['details']}")
-                        raise e
+                        logging.error(f"{e}\nLast printer state: {printer_dict['details']}")
+                        # raise e
 
                     printer_dict['poll_time'] = time.time()
 

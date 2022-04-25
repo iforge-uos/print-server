@@ -297,8 +297,13 @@ def main():
                         window[f"{loc}_cancel"].update(disabled=False)
 
                     if printer_state == "finished":
-                        window[f"{loc}_{printer_state}_filename"].update(
-                            f"{backend.fleet.printers[printer]['details']['job']['file']['display']}")
+                        try:
+                            window[f"{loc}_{printer_state}_filename"].update(
+                                f"{backend.fleet.printers[printer]['details']['job']['file']['display']}")
+                        except KeyError as e:
+                            logging.error(e)
+                            window[f"{loc}_{printer_state}_filename"].update(
+                                f"ERROR?")
                         window[f"{loc}_complete"].update(disabled=False)
                         window[f"{loc}_fail"].update(disabled=False)
 
