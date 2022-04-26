@@ -1,4 +1,4 @@
 {
-  "printer_type": "Ultimaker",
-  "test_mode": false
+  "printer_type": "Prusa",
+  "test_mode": true
 }

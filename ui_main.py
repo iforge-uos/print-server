@@ -223,114 +223,6 @@ def main():
             window["prev_page"].update(disabled=True if page == 0 else False)
             window["next_page"].update(disabled=True if page == pages - 1 else False)
 
-        # Events that trigger main display updates
-        if event in (sg.TIMEOUT_EVENT, "next_page", "prev_page"):
-            t0 = time.time()
-            backend.update()
-            if test_mode:
-                logging.debug(f"Update took {time.time()-t0:.2f}s")
-            joblist = backend.queue.get_jobs()
-            window['status'].update(f"Queued: {joblist.shape[0]}")
-            running_list = backend.queue.get_running_printers()
-            logging.debug(joblist)
-            # print(f"[INFO] joblist: {joblist}")
-            for y in range(PRINTER_ROWS):
-                for x in range(PRINTER_COLS):
-                    loc = f"{x}_{y}"
-                    idx = page*PRINTER_ROWS*PRINTER_COLS + y*PRINTER_COLS + x
-                    printer = printers[idx] if idx < len(printers) else None
-
-                    if printer:
-                        with backend.fleet.printers_lock:
-                            printer_state = backend.printers[printer]['details']['state']
-                        if printer_state in ("paused", "finishing", "cancelling"):  # Transient non-dangerous states
-                            printer_state = "printing"
-                        elif printer_state == "error":  # For offline_after_error
-                            printer_state = "offline"
-                        elif printer_state == "operational":
-                            printer_state = "blank"
-                        elif printer_state not in states:  # Unknown states - should be very rare
-                            printer_state = "unknown"
-                    else:
-                        printer_state = "blank"
-
-                    # Ensure correct frames are visible
-                    if not window[f"{loc}_frame_{printer_state}"].visible:
-                        logging.debug(f"changing {loc} to {printer_state}")
-                        for state in states:
-                            window[f"{loc}_frame_{state}"].update(visible=False)
-                        window[f"{loc}_frame_{printer_state}"].update(visible=True)
-
-                    # Update frame title to match printer and state
-                    if printer:
-                        if 'status' in backend.fleet.printers[printer]['details']\
-                                and 'bed' in backend.fleet.printers[printer]['details']['status']['temperature']:
-                            window[f"{loc}_frame_{printer_state}"].update(
-                                value=f"  {printer}  |  "
-                                      f"B: {int(backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual'])}°C  "
-                                      f"H: {int(backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['actual'])}°C  |  "
-                                      f"{backend.printers[printer]['details']['state'].title()}  ")
-                        else:
-                            window[f"{loc}_frame_{printer_state}"].update(
-                                value=f"  {printer}  |  "
-                                      f"{backend.printers[printer]['details']['state'].title()}  ")
-                    else:
-                        window[f"{loc}_frame_{printer_state}"].update(value=f"N/A | None")
-
-                    if printer_state == "available":
-                        if joblist.shape[0] > 0:
-                            window[f"{loc}_print"].update(source=images['print.png'], subsample=4)
-                            window[f"{loc}_print"].metadata['enabled'] = True
-                        else:
-                            window[f"{loc}_print"].update(source=images['print_disabled.png'], subsample=4)
-                            window[f"{loc}_print"].metadata['enabled'] = False
-
-                    if printer_state == "printing":
-                        # logging.debug(f"Printer details: {backend.fleet.printers[printer]['details']}")
-                        window[f"{loc}_{printer_state}_filename"].update(
-                            f"{backend.fleet.printers[printer]['details']['job']['file']['display']}")
-                        eta_string = running_list[printer]['ETA'].replace('\n', ', ')
-                        window[f"{loc}_{printer_state}_time"].update(
-                            f"{eta_string}, {str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['progress']['printTimeLeft'] or 0))} remaining")
-                        window[f"{loc}_{printer_state}_progbar"].update(
-                            int(backend.fleet.printers[printer]['details']['progress']['completion'] or 0))
-                        window[f"{loc}_cancel"].update(disabled=False)
-
-                    if printer_state == "finished":
-                        try:
-                            window[f"{loc}_{printer_state}_filename"].update(
-                                f"{backend.fleet.printers[printer]['details']['job']['file']['display']}")
-                        except KeyError as e:
-                            logging.error(e)
-                            window[f"{loc}_{printer_state}_filename"].update(
-                                f"ERROR?")
-                        window[f"{loc}_complete"].update(disabled=False)
-                        window[f"{loc}_fail"].update(disabled=False)
-
-                    if printer_state == "offline":
-                        if "error" in backend.printers[printer]['details']:
-                            logging.warning(f"Octoprint error, {backend.printers[printer]['details']['error']}")
-                            logging.debug(backend.fleet.printers[printer]['details'])
-                            window[f"{loc}_{printer_state}_cause"].update(
-                                f"Cause: {backend.printers[printer]['details']['error']}\n"
-                                f"Please contact an administrator")
-                        else:
-                            window[f"{loc}_{printer_state}_cause"].update(
-                                f"Cause: Lost connection, try reconnecting later")
-
-                    if printer_state == "unknown":
-                        logging.warning(f"Unknown state: {backend.printers[printer]['details']['state']}")
-                        logging.debug(backend.fleet.printers[printer]['details'])
-                        window[f"{loc}_{printer_state}_details"].update(
-                            f"Details:\n"
-                            f"State: {backend.printers[printer]['details']['state']}\n"
-                            f"File: {backend.fleet.printers[printer]['details']['job']['file']['display']}\n"
-                            f"{backend.fleet.printers[printer]['details']}")
-                        pass
-
-                    if printer_state == "blank":
-                        pass
-
         # Event handling
         event_components = event.split('_')
         loc = None
@@ -437,6 +329,115 @@ def main():
             if time.time() - logout_timer > TIMEOUT:
                 logging.info("Timed out")
                 break
+
+        # Events that trigger main display updates
+        t0 = time.time()
+        backend.update()
+        if test_mode:
+            logging.debug(f"Update took {time.time() - t0:.2f}s")
+        joblist = backend.queue.get_jobs()
+        window['status'].update(f"Queued: {joblist.shape[0]}")
+        running_list = backend.queue.get_running_printers()
+        logging.debug(joblist)
+        # print(f"[INFO] joblist: {joblist}")
+        for y in range(PRINTER_ROWS):
+            for x in range(PRINTER_COLS):
+                loc = f"{x}_{y}"
+                idx = page * PRINTER_ROWS * PRINTER_COLS + y * PRINTER_COLS + x
+                printer = printers[idx] if idx < len(printers) else None
+
+                if printer:
+                    with backend.fleet.printers_lock:
+                        printer_state = backend.printers[printer]['details']['state']
+                    if printer_state in (
+                    "paused", "finishing", "cancelling"):  # Transient non-dangerous states
+                        printer_state = "printing"
+                    elif printer_state == "error":  # For offline_after_error
+                        printer_state = "offline"
+                    elif printer_state == "operational":
+                        printer_state = "blank"
+                    elif printer_state not in states:  # Unknown states - should be very rare
+                        printer_state = "unknown"
+                else:
+                    printer_state = "blank"
+
+                # Ensure correct frames are visible
+                if not window[f"{loc}_frame_{printer_state}"].visible:
+                    logging.debug(f"changing {loc} to {printer_state}")
+                    for state in states:
+                        window[f"{loc}_frame_{state}"].update(visible=False)
+                    window[f"{loc}_frame_{printer_state}"].update(visible=True)
+
+                # Update frame title to match printer and state
+                if printer:
+                    if 'status' in backend.fleet.printers[printer]['details'] \
+                            and 'bed' in backend.fleet.printers[printer]['details']['status'][
+                        'temperature']:
+                        window[f"{loc}_frame_{printer_state}"].update(
+                            value=f"  {printer}  |  "
+                                  f"B: {int(backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual'])}°C  "
+                                  f"H: {int(backend.fleet.printers[printer]['details']['status']['temperature']['tool0']['actual'])}°C  |  "
+                                  f"{backend.printers[printer]['details']['state'].title()}  ")
+                    else:
+                        window[f"{loc}_frame_{printer_state}"].update(
+                            value=f"  {printer}  |  "
+                                  f"{backend.printers[printer]['details']['state'].title()}  ")
+                else:
+                    window[f"{loc}_frame_{printer_state}"].update(value=f"N/A | None")
+
+                if printer_state == "available":
+                    if joblist.shape[0] > 0:
+                        window[f"{loc}_print"].update(source=images['print.png'], subsample=4)
+                        window[f"{loc}_print"].metadata['enabled'] = True
+                    else:
+                        window[f"{loc}_print"].update(source=images['print_disabled.png'], subsample=4)
+                        window[f"{loc}_print"].metadata['enabled'] = False
+
+                if printer_state == "printing":
+                    # logging.debug(f"Printer details: {backend.fleet.printers[printer]['details']}")
+                    window[f"{loc}_{printer_state}_filename"].update(
+                        f"{backend.fleet.printers[printer]['details']['job']['file']['display']}")
+                    eta_string = running_list[printer]['ETA'].replace('\n', ', ')
+                    window[f"{loc}_{printer_state}_time"].update(
+                        f"{eta_string}, {str(datetime.timedelta(seconds=backend.fleet.printers[printer]['details']['progress']['printTimeLeft'] or 0))} remaining")
+                    window[f"{loc}_{printer_state}_progbar"].update(
+                        int(backend.fleet.printers[printer]['details']['progress']['completion'] or 0))
+                    window[f"{loc}_cancel"].update(disabled=False)
+
+                if printer_state == "finished":
+                    try:
+                        window[f"{loc}_{printer_state}_filename"].update(
+                            f"{backend.fleet.printers[printer]['details']['job']['file']['display']}")
+                    except KeyError as e:
+                        logging.error(e)
+                        window[f"{loc}_{printer_state}_filename"].update(
+                            f"ERROR?")
+                    window[f"{loc}_complete"].update(disabled=False)
+                    window[f"{loc}_fail"].update(disabled=False)
+
+                if printer_state == "offline":
+                    if "error" in backend.printers[printer]['details']:
+                        logging.warning(f"Octoprint error, {backend.printers[printer]['details']['error']}")
+                        logging.debug(backend.fleet.printers[printer]['details'])
+                        window[f"{loc}_{printer_state}_cause"].update(
+                            f"Cause: {backend.printers[printer]['details']['error']}\n"
+                            f"Please contact an administrator")
+                    else:
+                        window[f"{loc}_{printer_state}_cause"].update(
+                            f"Cause: Lost connection, try reconnecting later")
+
+                if printer_state == "unknown":
+                    logging.warning(f"Unknown state: {backend.printers[printer]['details']['state']}")
+                    logging.debug(backend.fleet.printers[printer]['details'])
+                    window[f"{loc}_{printer_state}_details"].update(
+                        f"Details:\n"
+                        f"State: {backend.printers[printer]['details']['state']}\n"
+                        f"File: {backend.fleet.printers[printer]['details']['job']['file']['display']}\n"
+                        f"{backend.fleet.printers[printer]['details']}")
+                    pass
+
+                if printer_state == "blank":
+                    pass
 
     window.close()
 

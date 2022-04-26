@@ -52,7 +52,7 @@ class PrintFleet:
 
     def reconnect_offline(self):
         for printer in self.printers:
-            if not self.printers[printer]['client']:
+            if not self.printers[printer]['client'] or self.printers[printer]['details']['state'] == "offline":
                 self.connect(printer)
 
     def connect(self, printer_name):
@@ -97,11 +97,10 @@ class PrintFleet:
                     self.printers[printer_name]['details'] = {'state': "operational"}
                     print("Success")
                     logging.info(f"Connection success, {printer_name} at {self.printers[printer_name]['ip']}")
-                except AttributeError or ConnectionError or RuntimeError or TypeError as e:
-                    # print(f"Connection error: {e}")
+                except (AttributeError, ConnectionError, RuntimeError, TypeError) as e:
                     self.printers[printer_name]['details'] = {'state': "offline"}
                     print("Failed")
-                    logging.info(f"Connection success but printer disconnected, {printer_name} at {self.printers[printer_name]['ip']}")
+                    logging.warning(f"Connection failed, {printer_name} at {self.printers[printer_name]['ip']}")
 
     def update(self, printer_name, queue_running=None):
         # Used to update whole printer but that was too slow, now just updates list of running printers
@@ -128,17 +127,14 @@ class PrintFleet:
                     while printer_dict['details']['state'] == "connecting":
                         time.sleep(0.5)
                         printer_dict['details'] = printer_dict['client'].job_info()
-                    try:
-                        if "error" in printer_dict['details']:
-                            printer_dict['details']['state'] = "error"
-                        elif printer_dict['details']['state'] == "offline":
-                            printer_dict['details']['state'] = "error"
-                            printer_dict['details']['error'] = "Printer disconnected"
-                        else:
-                            printer_dict['details']['status'] = printer_dict['client'].printer()
-                    except RuntimeError as e:
-                        logging.error(f"{e}\nLast printer state: {printer_dict['details']}")
-                        # raise e
+
+                    if "error" in printer_dict['details']:
+                        printer_dict['details']['state'] = "error"
+                    elif printer_dict['details']['state'] == "offline":
+                        printer_dict['details']['state'] = "error"
+                        printer_dict['details']['error'] = "Printer disconnected"
+                    else:
+                        printer_dict['details']['status'] = printer_dict['client'].printer()
 
                     printer_dict['poll_time'] = time.time()
 
@@ -151,9 +147,12 @@ class PrintFleet:
                     if printer_dict['details']['state'] == "printing" and printer_name not in queue_running:
                         printer_dict['details']['state'] = "queue_error"
 
-                except ConnectionError:
+                except ConnectionError as e:
                     printer_dict['details'] = {"state": "offline"}
-                    logging.warning(f"Connection error, {printer_name} at {printer_dict['ip']}")
+                    logging.warning(f"Connection error, {printer_name} at {printer_dict['ip']}\n{e}")
+                except RuntimeError as e:
+                    printer_dict['details'] = {"state": "offline"}
+                    logging.warning(f"Runtime error, {printer_name} at {printer_dict['ip']}\n{e}")
 
             with self.printers_lock:
                 self.printers[printer_name] = printer_dict
