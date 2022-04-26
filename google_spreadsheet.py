@@ -5,6 +5,7 @@ import threading
 import time
 
 import gspread
+import pandas
 import pandas as pd
 from oauth2client.service_account import ServiceAccountCredentials
 from cryptography.fernet import Fernet
@@ -69,18 +70,24 @@ class Spreadsheet:
     def get_running(self):
         df = self.get_data()
         # return dict of two dataframes, one for each printer type, for rows where "Status" column is "Running"
-        prusaDf = df.loc[(df.loc[:, "Status"] == "Running") & (df.loc[:, "Printer Type"] == "Prusa")]
-        ultiDf = df.loc[(df.loc[:, "Status"] == "Running") & (df.loc[:, "Printer Type"] == "Ultimaker")]
-        return {"Prusa": prusaDf, "Ultimaker": ultiDf}
+        prusa_df = df.loc[(df.loc[:, "Status"] == "Running") & (df.loc[:, "Printer Type"] == "Prusa")]
+        ulti_df = df.loc[(df.loc[:, "Status"] == "Running") & (df.loc[:, "Printer Type"] == "Ultimaker")]
+        return {"Prusa": prusa_df, "Ultimaker": ulti_df}
 
     def get_queued(self):
         df = self.get_data()
         # return dict of two dataframes, one for each printer type, for rows where "Status" column is "Queued"
-        prusaDf = df.loc[
-            (df.loc[:, "Status"] == "Queued") & (df.loc[:, "Printer Type"] == "Prusa")]
-        ultiDf = df.loc[
-            (df.loc[:, "Status"] == "Queued") & (df.loc[:, "Printer Type"] == "Ultimaker")]
-        return {"Prusa": prusaDf, "Ultimaker": ultiDf}
+        try:
+            prusa_df = df.loc[(df.loc[:, "Status"] == "Queued") & (df.loc[:, "Printer Type"] == "Prusa")]
+        except KeyError:
+            prusa_df = pandas.DataFrame()
+
+        try:
+            ulti_df = df.loc[(df.loc[:, "Status"] == "Queued") & (df.loc[:, "Printer Type"] == "Ultimaker")]
+        except KeyError:
+            ulti_df = pandas.DataFrame()
+
+        return {"Prusa": prusa_df, "Ultimaker": ulti_df}
 
     def get_cell_value(self, row, col):
         return self.queue_sheet.cell(row, col).value
@@ -138,4 +145,3 @@ if __name__ == "__main__":
     pd.reset_option('display.max_columns')
     pd.reset_option('display.width')
     pd.reset_option('display.max_colwidth')
-
