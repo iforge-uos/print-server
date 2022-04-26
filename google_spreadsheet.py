@@ -28,6 +28,12 @@ class Spreadsheet:
     def update_data(self):
         while True:
             try:
+                # TODO: fixme
+                """
+                breaks here with:
+                    requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='sheets.googleapis.com', port=443): Read timed out. (read timeout=120)
+                if left active for too long
+                """
                 self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA", head=3))
                 break
             except gspread.exceptions.APIError as e:
