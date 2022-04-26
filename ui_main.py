@@ -175,7 +175,8 @@ def main():
     window = sg.Window('iForge Printer Control',
                        layout,
                        element_justification="center",
-                       size=WINDOW_SIZE
+                       size=WINDOW_SIZE,
+                       resizable=True
                        )
     window.finalize()
     if test_mode:
