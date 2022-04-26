@@ -38,9 +38,12 @@ class PrintQueue:
 
     def get_running_printers(self):
         running_df = self.print_sheet.get_running()[self.printer_type]
-        running_df.set_index('Printer', inplace=True)
-        running_dict = running_df.to_dict('index')
-        return running_dict
+        if running_df.shape[0] > 0:
+            running_df.set_index('Printer', inplace=True)
+            running_dict = running_df.to_dict('index')
+            return running_dict
+        else:
+            return {}
 
     def get_jobs(self):
         return self.joblist

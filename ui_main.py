@@ -98,27 +98,27 @@ def main():
                                 [sg.Image(images['print.png'], enable_events=True, subsample=4, key=f"{x}_{y}_print",
                                           metadata={'enabled': True})]]
 
-            printing_layout = [[sg.Text(f"LOADING", key=f"{x}_{y}_printing_filename")],
+            printing_layout = [[sg.Text(f"LOADING", key=f"{x}_{y}_printing_filename", justification='center')],
                                [sg.Text(f"Print time: 0:00:00 elapsed, approx 0:00:00 remaining",
-                                        key=f"{x}_{y}_printing_time")],
+                                        key=f"{x}_{y}_printing_time", justification='center')],
                                [sg.Button("cancel", key=f"{x}_{y}_cancel")],
                                [sg.ProgressBar(max_value=100, orientation='h', key=f"{x}_{y}_printing_progbar",
                                                size=(100, 20), expand_x=True)],
                                ]
 
-            finished_layout = [[sg.Text("Print Finished:")],
-                               [sg.Text(f"N/A", key=f"{x}_{y}_finished_filename")],
-                               [sg.Text(f"Was the print successful?")],
+            finished_layout = [[sg.Text("Print Finished:", justification='center')],
+                               [sg.Text(f"N/A", key=f"{x}_{y}_finished_filename", justification='center')],
+                               [sg.Text(f"Was the print successful?", justification='center')],
                                [sg.Button("Complete", key=f"{x}_{y}_complete"),
                                 sg.Button("Failed", key=f"{x}_{y}_fail")]
                                ]
 
-            offline_layout = [[sg.Text("Printer Offline")],
-                              [sg.Text("Cause: Unknown", key=f"{x}_{y}_offline_cause")],
+            offline_layout = [[sg.Text("Printer Offline", justification='center')],
+                              [sg.Text("Cause: Unknown", key=f"{x}_{y}_offline_cause", justification='center')],
                               [sg.Button("Reconnect", key=f"{x}_{y}_reconnect")]]
 
-            unknown_layout = [[sg.Text('ERROR: printer status unknown!')],
-                              [sg.Text('Please notify system administrator')],
+            unknown_layout = [[sg.Text('ERROR: printer status unknown!', justification='center')],
+                              [sg.Text('Please notify system administrator', justification='center')],
                               [sg.Multiline('Details: ', key=f"{x}_{y}_unknown_details",
                                             disabled=True, expand_x=True, expand_y=True)]
                               ]

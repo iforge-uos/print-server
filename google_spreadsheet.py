@@ -67,27 +67,26 @@ class Spreadsheet:
                 with self.df_lock:
                     self.dataframe = pd.DataFrame()
 
-    def get_running(self):
-        df = self.get_data()
-        # return dict of two dataframes, one for each printer type, for rows where "Status" column is "Running"
-        prusa_df = df.loc[(df.loc[:, "Status"] == "Running") & (df.loc[:, "Printer Type"] == "Prusa")]
-        ulti_df = df.loc[(df.loc[:, "Status"] == "Running") & (df.loc[:, "Printer Type"] == "Ultimaker")]
-        return {"Prusa": prusa_df, "Ultimaker": ulti_df}
-
-    def get_queued(self):
+    def get_printers(self, status):
         df = self.get_data()
         # return dict of two dataframes, one for each printer type, for rows where "Status" column is "Queued"
         try:
-            prusa_df = df.loc[(df.loc[:, "Status"] == "Queued") & (df.loc[:, "Printer Type"] == "Prusa")]
+            prusa_df = df.loc[(df.loc[:, "Status"] == status) & (df.loc[:, "Printer Type"] == "Prusa")]
         except KeyError:
             prusa_df = pandas.DataFrame()
 
         try:
-            ulti_df = df.loc[(df.loc[:, "Status"] == "Queued") & (df.loc[:, "Printer Type"] == "Ultimaker")]
+            ulti_df = df.loc[(df.loc[:, "Status"] == status) & (df.loc[:, "Printer Type"] == "Ultimaker")]
         except KeyError:
             ulti_df = pandas.DataFrame()
 
         return {"Prusa": prusa_df, "Ultimaker": ulti_df}
+
+    def get_running(self):
+        return self.get_printers("Running")
+
+    def get_queued(self):
+        return self.get_printers("Queued")
 
     def get_cell_value(self, row, col):
         return self.queue_sheet.cell(row, col).value
@@ -101,19 +100,13 @@ class Spreadsheet:
 
         row = row[0] + 4  # +4 for header & zero-indexing,
 
-        # values = []
-        # for val in data.values.tolist():  # elementwise convert numpy numbers to standard numbers
-        #     try:
-        #         values.append(val.item())
-        #     except AttributeError:  # for inconvertible data-types
-        #         values.append(val)
+        # [values] must be a 2x-nested list to write correctly
+        self.queue_sheet.update(f"{row}:{row}", data.values.tolist(), raw=False)
 
-        self.queue_sheet.update(f"{row}:{row}", data.values.tolist(), raw=False)  # [values] must be a 2x-nested list to write correctly
-        """
-        [[1, 2], [3, 4]]        - writes 2x2
-        [[1, 2, 3, 4]]          - writes 1x4
-        [[1], [2], [3], [4]]    - writes 4x1
-        """
+        # Examples:
+        # [[1, 2], [3, 4]]        - writes 2x2
+        # [[1, 2, 3, 4]]          - writes 1x4
+        # [[1], [2], [3], [4]]    - writes 4x1
 
 
 if __name__ == "__main__":
