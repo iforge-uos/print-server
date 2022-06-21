@@ -1,3 +1,4 @@
+import getpass
 import time
 from main_backend import Backend
 
@@ -71,7 +72,7 @@ def print_print(backend):
     n = get_number_in_list([f"{job[2].split(',')[-1][1:-2][:32]:32s}"
                             f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
                             f"\t{job[7]}"
-                            for job in joblist.loc[:].values.tolist()]) 
+                            for job in joblist.loc[:].values.tolist()])
     if n == -1:  # cancel action
         return
     if n == -2:  # levelling print
@@ -206,16 +207,23 @@ if __name__ == '__main__':
     backend.update()
     list_printers(backend)
 
+    base_option_list = "\nSelect action:\n" \
+                       "'l'\t-\tList\n" \
+                       "'p'\t-\tPrint\n" \
+                       "'f'\t-\tFinish print handling (Complete/Fail)\n" \
+                       "'c'\t-\tCancel print\n" \
+                       "'r'\t-\tRefresh printers (slow)\n" \
+                       "'a'\t-\tAdmin Mode"
+
+    admin_option_list = "\nAdmin Options:\n" \
+                        "'c'\t-\tConnect a printer\n" \
+                        "'d'\t-\tDisconnect a printer"
+
     loop = True
     while loop:  # loop = False  # only run single loop for testing
 
-        print("\nSelect action:\n"
-              "'l'\t-\tList\n"
-              "'p'\t-\tPrint\n"
-              "'f'\t-\tFinish print handling (Complete/Fail)\n"
-              "'c'\t-\tCancel print\n"
-              "'r'\t-\tRefresh printers (slow)")
-        choice = input().upper()
+        print(base_option_list)
+        choice = input(">> ").upper()
 
         backend.update()
 
@@ -233,6 +241,10 @@ if __name__ == '__main__':
 
         elif choice == "R":  # unhandled, will select "finished" print and mark complete/fail
             backend.connect()
+
+        elif choice == "A":  # attempt to enter admin mode
+            pwd = getpass.getpass("Enter Admin Password:\n>> ")
+            print(base_option_list + admin_option_list)
 
         elif choice in ["Q"]:
             exit()
