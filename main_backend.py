@@ -40,6 +40,14 @@ class Backend:
     def connect(self):
         self.fleet.connect("all")
 
+    def connect_printer(self, printer_name):
+        self.fleet.attach_printer(printer_name)
+        self.update()
+
+    def disconnect_printer(self, printer_name):
+        self.fleet.detach_printer(printer_name)
+        self.update()
+
     def update(self):
         self.queue.update()
         running_printers = self.queue.get_running_printers()

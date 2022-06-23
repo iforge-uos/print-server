@@ -1,3 +1,4 @@
+import getpass
 import time
 from main_backend import Backend
 
@@ -32,6 +33,7 @@ def get_number_in_list(elem_list):
 
 
 def list_printers(backend):
+    backend.update()
     print(f"Printers:")
     for printer in backend.fleet.printers.keys():
         print(f"{printer:20s} - {backend.fleet.printers[printer]['details']['state']}")
@@ -71,7 +73,7 @@ def print_print(backend):
     n = get_number_in_list([f"{job[2].split(',')[-1][1:-2][:32]:32s}"
                             f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
                             f"\t{job[7]}"
-                            for job in joblist.loc[:].values.tolist()]) 
+                            for job in joblist.loc[:].values.tolist()])
     if n == -1:  # cancel action
         return
     if n == -2:  # levelling print
@@ -184,6 +186,46 @@ def cancel_print(backend):
     print(f"Go and check {printing_printers[n]} is clear and ready to print again.")
     time.sleep(10)
 
+def detach_printer(backend):
+    online_printers = []
+    for i_printer in backend.printers.keys():
+        if "available" in backend.printers[i_printer]["details"]["state"]:
+            online_printers.append(i_printer)
+
+    if len(online_printers) == 0:
+        print("No available printers to detach, try again later")
+        return
+
+    print("Select printer to detach:")
+
+    n = get_number_in_list(online_printers)
+    if n == -1:
+        return
+
+    print(f'Attempting to detach {online_printers[n]}, please wait')
+    backend.disconnect_printer(online_printers[n])
+    print(f'{online_printers[n]} is now {backend.printers[online_printers[n]]["details"]["state"].lower()}')
+
+def attach_printer(backend):
+    offline_printers = []
+    for i_printer in backend.printers.keys():
+        if "offline" in backend.printers[i_printer]["details"]["state"]:
+            offline_printers.append(i_printer)
+
+    if len(offline_printers) == 0:
+        print("No offline printers to attach, try again later")
+        return
+
+    print("Select printer to attach:")
+
+    n = get_number_in_list(offline_printers)
+    if n == -1:
+        return
+
+    print(f'Attempting to attach {offline_printers[n]}, please wait')
+    backend.connect_printer(offline_printers[n])
+    print(f'{offline_printers[n]} is now {backend.printers[offline_printers[n]]["details"]["state"].lower()}')
+
 
 if __name__ == '__main__':
     # parser = argparse.ArgumentParser(description='iForge 3D Print Queue Management System')
@@ -206,16 +248,23 @@ if __name__ == '__main__':
     backend.update()
     list_printers(backend)
 
+    base_option_list = "\nSelect action:\n" \
+                       "'l'\t-\tList\n" \
+                       "'p'\t-\tPrint\n" \
+                       "'f'\t-\tFinish print handling (Complete/Fail)\n" \
+                       "'c'\t-\tCancel print\n" \
+                       "'r'\t-\tRefresh printers (slow)\n" \
+                       # "'a'\t-\tAdmin Mode"
+
+    admin_option_list = "\nAdmin Options:\n" \
+                        "'c'\t-\tConnect a printer\n" \
+                        "'d'\t-\tDisconnect a printer"
+
     loop = True
     while loop:  # loop = False  # only run single loop for testing
 
-        print("\nSelect action:\n"
-              "'l'\t-\tList\n"
-              "'p'\t-\tPrint\n"
-              "'f'\t-\tFinish print handling (Complete/Fail)\n"
-              "'c'\t-\tCancel print\n"
-              "'r'\t-\tRefresh printers (slow)")
-        choice = input().upper()
+        print(base_option_list)
+        choice = input(">> ").upper()
 
         backend.update()
 
@@ -233,6 +282,19 @@ if __name__ == '__main__':
 
         elif choice == "R":  # unhandled, will select "finished" print and mark complete/fail
             backend.connect()
+
+        elif choice == "A":  # attempt to enter admin mode
+            pwd = getpass.getpass("Enter Admin Password:\n>> ")
+            if pwd == "":
+                backend.connect()
+
+                print(admin_option_list)
+                choice = input(">> ").upper()
+
+                if choice == "C":
+                    attach_printer(backend)
+                elif choice == "D":
+                    detach_printer(backend)
 
         elif choice in ["Q"]:
             exit()
