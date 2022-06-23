@@ -14,7 +14,7 @@ def main(backend, printer, suppress_fullscreen=False):
     if joblist.shape[0] <= 0:
         return -1
     logging.debug(joblist)
-    column_headings = ["Gcode Filename", "Print Time", "Name", "iRep Check", "Filament (g)"]
+    column_headings = ["Gcode Filename", "Print Time", "Name", "Rep Check", "Filament (g)"]
     layout = [
         [sg.T("Start Print", justification='center', expand_x=True, key="title")],
         [sg.Table([column_headings],
