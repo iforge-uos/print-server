@@ -93,7 +93,7 @@ def main(backend, printer, suppress_fullscreen=False):
             window["details"].update(
                 f"Print Details:\n"
                 f"User:\n\t{job['Name']}\n"
-                f"Rep Check:\n\t{job['iRep Check']}\n"
+                f"Rep Check:\n\t{job['Rep Check']}\n"
                 f"Filename:\n\t{job['Gcode Filename']}\n"
                 f"Print Time:\n\t{job['Print Time']}\n"
                 f"Filament:\n\t{job['Filament (g)']}g\n"

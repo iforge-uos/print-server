@@ -307,8 +307,9 @@ def main():
                         logging.info(f"Cancel confirmed {loc}, {printer}, requeue={requeue}, comment={comment}")
                         backend.cancel_print(printer, requeue, comment)
                         sg.popup_quick_message("Print cancelled", background_color="maroon")
-                        backend.queue.print_sheet.force_update_data()
                         backend.fleet.update_printer(printer, True)  # Force update
+                        backend.queue.print_sheet.force_update_data()
+                        backend.update()
 
             if event_components[-1] == "reconnect":
                 logging.info(f"Reconnect {loc}, {printer}")
@@ -372,8 +373,7 @@ def main():
                 # Update frame title to match printer and state
                 if printer:
                     if 'status' in backend.fleet.printers[printer]['details'] \
-                            and 'bed' in backend.fleet.printers[printer]['details']['status'][
-                        'temperature']:
+                            and 'bed' in backend.fleet.printers[printer]['details']['status']['temperature']:
                         window[f"{loc}_frame_{printer_state}"].update(
                             value=f"  {printer}  |  "
                                   f"B: {int(backend.fleet.printers[printer]['details']['status']['temperature']['bed']['actual'])}°C  "
