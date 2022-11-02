@@ -253,15 +253,15 @@ if __name__ == '__main__':
                        "'p'\t-\tPrint\n" \
                        "'f'\t-\tFinish print handling (Complete/Fail)\n" \
                        "'c'\t-\tCancel print\n" \
-                       "'r'\t-\tRefresh printers (slow)\n" \
+                       "'r'\t-\tReconnect to all printers (slow)\n" \
                        # "'a'\t-\tAdmin Mode"
 
     admin_option_list = "\nAdmin Options:\n" \
-                        "'c'\t-\tConnect a printer\n" \
-                        "'d'\t-\tDisconnect a printer"
+                        "'a'\t-\tAttach a printer (to a Pi)\n" \
+                        "'d'\t-\tDetach a printer (from a Pi)"
 
     loop = True
-    while loop:  # loop = False  # only run single loop for testing
+    while loop:
 
         print(base_option_list)
         choice = input(">> ").upper()
@@ -274,19 +274,20 @@ if __name__ == '__main__':
         elif choice == "P":  # select print and printer
             print_print(backend)
 
-        elif choice == "F":  # unhandled, will select "finished" print and mark complete/fail
+        elif choice == "F":
             finish_print(backend)
 
-        elif choice == "C":  # unhandled, will select "finished" print and mark complete/fail
+        elif choice == "C":
             cancel_print(backend)
 
-        elif choice == "R":  # unhandled, will select "finished" print and mark complete/fail
+        elif choice == "R":
             backend.connect()
 
         elif choice == "A":  # attempt to enter admin mode
             pwd = getpass.getpass("Enter Admin Password:\n>> ")
             if pwd == "":
-                backend.connect()
+                print("Access granted")
+                backend.update()
 
                 print(admin_option_list)
                 choice = input(">> ").upper()
@@ -295,6 +296,8 @@ if __name__ == '__main__':
                     attach_printer(backend)
                 elif choice == "D":
                     detach_printer(backend)
+            else:
+                print("Access denied")
 
         elif choice in ["Q"]:
             exit()
