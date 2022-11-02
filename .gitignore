@@ -1,5 +1,7 @@
 .idea/
 *.gcode
+*.log
+*.key
 secrets.json
 
 # Byte-compiled / optimized / DLL files
@@ -131,6 +133,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-# Secrets
-secrets.key
