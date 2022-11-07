@@ -6,14 +6,21 @@ from cryptography.fernet import Fernet
 import os
 import logging
 
+logging.basicConfig()
+logging.getLogger().setLevel(logging.ERROR)
 
 class Backend:
-    def __init__(self, printer_type):
-        logging.info(f"Starting backend, {printer_type}")
+    def __init__(self, printer_group):
+        logging.info(f"Starting backend, {printer_group}")
         self.secrets = {}
         self.load_secrets()
 
-        self.printers = self.secrets["printers"][printer_type]
+        valid_groups = list(self.secrets["printers"].keys())
+        if not printer_group in valid_groups:
+            logging.critical("Invalid printer group provided")
+            exit(-1)
+
+        self.printers = self.secrets["printers"][printer_group]
         self.printer_type = list(set([val["type"] for i, val in self.printers.items()]))[0].capitalize()
         self.queue = print_queue.PrintQueue(google_secrets=self.secrets["google_secrets"], printer_type=self.printer_type)
         print("Performing initial printer connection, this may take some time")
@@ -48,7 +55,7 @@ class Backend:
     def update(self):
         self.queue.update()
         running_printers = self.queue.get_running_printers()
-        self.fleet.update("all", queue_running=running_printers)
+        self.fleet.update_running(running_printers)
 
     def do_print(self, printer_name):
         filename = self.queue.download_selected()

@@ -10,7 +10,6 @@ import multiprocessing
 import threading
 import logging
 
-
 """
 Connection State Conventions:
 pi connected, printer connected: online
@@ -103,7 +102,7 @@ class PrintFleet:
                 self.printers[printer_name]['client'] = arg_return_dict['client']
 
                 if not self.printers[printer_name]['client']:
-                    self.printers[printer_name]['details'] = {'state': "offline"}
+                    self.printers[printer_name]['details'] = {'state': "unreachable"}
                     logging.info(f"Connection failed, {printer_name} at {self.printers[printer_name]['ip']}")
 
                 try:
@@ -113,11 +112,11 @@ class PrintFleet:
                     print("Success")
                     logging.info(f"Connection success, {printer_name} at {self.printers[printer_name]['ip']}")
                 except (AttributeError, ConnectionError, RuntimeError, TypeError) as e:
-                    self.printers[printer_name]['details'] = {'state': "offline"}
+                    self.printers[printer_name]['details'] = {'state': "unreachable"}
                     print("Failed")
                     logging.warning(f"Connection failed, {printer_name} at {self.printers[printer_name]['ip']}")
 
-    def update(self, printer_name, queue_running=None):
+    def update_running(self, queue_running=None):
         # Used to update whole printer but that was too slow, now just updates list of running printers
         with self.printers_lock:
             if queue_running is None:
@@ -146,7 +145,7 @@ class PrintFleet:
                     if "error" in printer_dict['details']:
                         printer_dict['details']['state'] = "error"
                     elif printer_dict['details']['state'] == "offline":
-                        printer_dict['details']['state'] = "error"
+                        printer_dict['details']['state'] = "offline"
                         printer_dict['details']['error'] = "Printer disconnected"
                     else:
                         printer_dict['details']['status'] = printer_dict['client'].printer()
@@ -207,18 +206,18 @@ class PrintFleet:
 
     def attach_printer(self, printer_name):
         self.printers[printer_name]["client"].connect(port="/dev/ttyACM0")
-        self.update(printer_name)
+        time.sleep(0.5)
         while self.printers[printer_name]["details"]["state"].lower() not in ["available", "finished",
                                                                               "offline after error", "offline",
                                                                               "unreachable"]:
-            self.update(printer_name)
+            # wait for daemon to report updated state
             time.sleep(0.5)
 
     def detach_printer(self, printer_name):
         self.printers[printer_name]["client"].disconnect()
-        self.update(printer_name)
+        time.sleep(0.5)
         while self.printers[printer_name]["details"]["state"].lower() not in ["offline", "unreachable"]:
-            self.update(printer_name)
+            # wait for daemon to report updated state
             time.sleep(0.5)
 
 
@@ -235,11 +234,3 @@ if __name__ == "__main__":
     decrypted = fernet.decrypt(data)
 
     printer_secrets = json.loads(decrypted)['printers']
-
-    fleet = PrintFleet(printer_secrets)
-
-    for name, data in fleet.printers.items():
-        print(f"{name}:\n{data}")
-    fleet.update("all", [])
-    fleet.upload("rob", "testPrint_no_extrude.gcode")
-    print("upload complete")
