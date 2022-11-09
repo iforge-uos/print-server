@@ -235,12 +235,12 @@ if __name__ == '__main__':
     # args = parser.parse_args()
     # secrets_key = args.secrets_key
 
-    group = input("Enter printer type: ('Prusa' or 'Ultimaker')\n").lower()
+    group = input("Select area: ('Mainspace' or 'Heartspace')\n").lower()
     # support shortcuts for common selections
-    if group == "p":
-        group = "prusa"
-    elif group == "u":
-        group = "ultimaker"
+    if group == "m":
+        group = "mainspace"
+    elif group == "h":
+        group = "heartspace"
 
     backend = Backend(printer_group=str(group).capitalize())
 

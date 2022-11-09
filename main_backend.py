@@ -21,7 +21,7 @@ class Backend:
             exit(-1)
 
         self.printers = self.secrets["printers"][printer_group]
-        self.printer_type = list(set([val["type"] for i, val in self.printers.items()]))[0].capitalize()
+        self.printer_type = list(set([val["type"] for i, val in self.printers.items()]))[0]
         self.queue = print_queue.PrintQueue(google_secrets=self.secrets["google_secrets"], printer_type=self.printer_type)
         print("Performing initial printer connection, this may take some time")
         self.fleet = print_fleet.PrintFleet(self.printers)
