@@ -186,7 +186,7 @@ def cancel_print(backend):
     print(f"Go and check {printing_printers[n]} is clear and ready to print again.")
     time.sleep(10)
 
-def detach_printer(backend):
+def disconnect_printer(backend):
     online_printers = []
     for i_printer in backend.printers.keys():
         if "available" in backend.printers[i_printer]["details"]["state"]:
@@ -206,7 +206,7 @@ def detach_printer(backend):
     backend.disconnect_printer(online_printers[n])
     print(f'{online_printers[n]} is now {backend.printers[online_printers[n]]["details"]["state"].lower()}')
 
-def attach_printer(backend):
+def connect_printer(backend):
     offline_printers = []
     for i_printer in backend.printers.keys():
         if "offline" in backend.printers[i_printer]["details"]["state"]:
@@ -235,14 +235,14 @@ if __name__ == '__main__':
     # args = parser.parse_args()
     # secrets_key = args.secrets_key
 
-    printer_list = input("Enter printer type: ('Prusa' or 'Ultimaker')\n").lower()
+    group = input("Select area: ('Mainspace' or 'Heartspace')\n").lower()
     # support shortcuts for common selections
-    if printer_list == "p":
-        printer_list = "prusa"
-    elif printer_list == "u":
-        printer_list = "ultimaker"
+    if group == "m":
+        group = "mainspace"
+    elif group == "h":
+        group = "heartspace"
 
-    backend = Backend(printer_list=str(printer_list).capitalize())
+    backend = Backend(printer_group=str(group).capitalize())
 
     # start with some information
     backend.update()
@@ -257,8 +257,8 @@ if __name__ == '__main__':
                        # "'a'\t-\tAdmin Mode"
 
     admin_option_list = "\nAdmin Options:\n" \
-                        "'a'\t-\tAttach a printer (to a Pi)\n" \
-                        "'d'\t-\tDetach a printer (from a Pi)"
+                        "'c'\t-\tConnect a printer (to a Pi)\n" \
+                        "'d'\t-\tDisconnect a printer (from a Pi)"
 
     loop = True
     while loop:
@@ -293,9 +293,9 @@ if __name__ == '__main__':
                 choice = input(">> ").upper()
 
                 if choice == "C":
-                    attach_printer(backend)
+                    connect_printer(backend)
                 elif choice == "D":
-                    detach_printer(backend)
+                    disconnect_printer(backend)
             else:
                 print("Access denied")
 
