@@ -11,16 +11,18 @@ import threading
 import logging
 
 """
-Connection State Conventions:
-pi connected, printer connected: online
-pi connected, printer disconnected: offline
-pi disconnected (printer unknown): unreachable
+Conventions:
+    Connection:
+        |    \\ Printer ||      y           n    |
+        |_Pi__\\________||_____________|_________|
+        |       y       ||   online    | offline |
+        |       n       || unreachable |   n/a   |
 
-Status Conventions:
-Printing, queue printing: printing
-Printing, queue not printing: queue_error
-Not printing, queue printing: finished
-Not printing, queue not printing: available
+    Status:
+        |        \\ Queue || printing | not printing |
+        |_Printer_\\______||__________|______________|
+        |    printing     || printing | queue_error  |
+        |  not printing   || finished |  available   | 
 """
 DO_THREAD = True
 
@@ -45,12 +47,11 @@ class PrintFleet:
             for printer in self.printers:
                 self.printers[printer]['client'] = None
                 self.printers[printer]['details'] = None
-                self.printers[printer]['poll_time'] = 0
 
         self.connect("all")
 
         for printer in self.printers:
-            update_daemon = threading.Thread(target=self.update_printer, args=(printer,), daemon=True)
+            update_daemon = threading.Thread(target=self.get_printer_status, args=(printer,), daemon=True)
             update_daemon.start()
 
     def __enter__(self):
@@ -124,7 +125,7 @@ class PrintFleet:
             else:
                 self.queue_running = queue_running
 
-    def update_printer(self, printer_name, oneshot=False):
+    def get_printer_status(self, printer_name, oneshot=False):
         time.sleep(0.2)
         while True:
             with self.printers_lock:
@@ -145,12 +146,9 @@ class PrintFleet:
                     if "error" in printer_dict['details']:
                         printer_dict['details']['state'] = "error"
                     elif printer_dict['details']['state'] == "offline":
-                        printer_dict['details']['state'] = "offline"
                         printer_dict['details']['error'] = "Printer disconnected"
                     else:
                         printer_dict['details']['status'] = printer_dict['client'].printer()
-
-                    printer_dict['poll_time'] = time.time()
 
                     if printer_dict['details']['state'] == "operational":
                         if printer_name in queue_running:

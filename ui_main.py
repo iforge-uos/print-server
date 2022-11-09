@@ -254,7 +254,7 @@ def main():
                         window[f"{loc}_print"].update(source=images['print_disabled.png'], subsample=4)
                         window[f"{loc}_print"].metadata['enabled'] = False
                         backend.queue.print_sheet.force_update_data()
-                        backend.fleet.update_printer(printer, True)  # Force update
+                        backend.fleet.get_printer_status(printer, True)  # Force update
                     else:
                         window[f"{loc}_print"].update(source=images['print_disabled.png'], subsample=4)
 
@@ -266,7 +266,7 @@ def main():
                 sg.popup_quick_message("Marking print successful, please wait", background_color="dark violet")
                 backend.end_print(printer, "Complete", False, "")
                 backend.queue.print_sheet.force_update_data()
-                backend.fleet.update_printer(printer, True)  # Force update
+                backend.fleet.get_printer_status(printer, True)  # Force update
 
             if event_components[-1] == "fail":
                 logging.info(f"Fail {loc}, {printer}")
@@ -283,7 +283,7 @@ def main():
                 logging.info(f"Fail confirmed {loc}, {printer}, requeue={requeue}, comment={comment}")
                 backend.end_print(printer, "Failed", requeue, comment)
                 backend.queue.print_sheet.force_update_data()
-                backend.fleet.update_printer(printer, True)  # Force update
+                backend.fleet.get_printer_status(printer, True)  # Force update
 
             if event_components[-1] == "cancel":
                 logging.info(f"Cancel {loc}, {printer}")
@@ -293,7 +293,7 @@ def main():
                     sg.popup_quick_message(f"Cannot cancel, {printer} not printing!")
                     logging.warning("Cancel failed")
                     backend.queue.print_sheet.force_update_data()
-                    backend.fleet.update_printer(printer, True)  # Force update
+                    backend.fleet.get_printer_status(printer, True)  # Force update
                 else:
                     confirm = sg.popup_yes_no("Are you sure you want to cancel this print?", title="Confirm cancel?")
                     if confirm == "Yes":
@@ -307,7 +307,7 @@ def main():
                         logging.info(f"Cancel confirmed {loc}, {printer}, requeue={requeue}, comment={comment}")
                         backend.cancel_print(printer, requeue, comment)
                         sg.popup_quick_message("Print cancelled", background_color="maroon")
-                        backend.fleet.update_printer(printer, True)  # Force update
+                        backend.fleet.get_printer_status(printer, True)  # Force update
                         backend.queue.print_sheet.force_update_data()
                         backend.update()
 
@@ -316,7 +316,7 @@ def main():
                 sg.popup_quick_message("Reconnecting, please wait", background_color="dark cyan")
                 backend.fleet.reconnect_offline()
                 backend.queue.print_sheet.force_update_data()
-                backend.fleet.update_printer(printer, True)  # Force update
+                backend.fleet.get_printer_status(printer, True)  # Force update
 
         # Auto-logout timer
         if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
