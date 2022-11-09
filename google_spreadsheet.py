@@ -21,7 +21,6 @@ class Spreadsheet:
         self.gspread_creds = gspread.authorize(self.creds)
         self.queue_sheet = self.gspread_creds.open_by_key(self.vars["tokens"]["sheet"]).worksheet("Queue")
         self.dataframe = None
-        self.last_update = None
         self.df_lock = threading.Lock()
 
         # Start update daemon
@@ -52,7 +51,7 @@ class Spreadsheet:
                 """
                 with self.df_lock:
                     self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA", head=3))
-                self.last_update = time.time()
+                s = 5.0  # reset s when successful
                 time.sleep(5)
             except gspread.exceptions.APIError as e:
                 # temporary error, keep trying
@@ -65,7 +64,6 @@ class Spreadsheet:
             try:
                 with self.df_lock:
                     self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA", head=3))
-                self.last_update = time.time()
                 return
             except gspread.exceptions.APIError as e:
                 # temporary error, keep trying
@@ -74,19 +72,17 @@ class Spreadsheet:
                     self.dataframe = pd.DataFrame()
 
     def get_printers(self, status):
+        result = {}
         df = self.get_data()
         # return dict of two dataframes, one for each printer type, for rows where "Status" column is "Queued"
-        try:
-            prusa_df = df.loc[(df.loc[:, "Status"] == status) & (df.loc[:, "Printer Type"] == "Prusa")]
-        except KeyError:
-            prusa_df = pandas.DataFrame()
+        printer_types = list(set(df.loc[:, "Printer Type"]))
+        for printer_type in printer_types:
+            try:
+                result[printer_type] = df.loc[(df.loc[:, "Status"] == status) & (df.loc[:, "Printer Type"] == printer_type)]
+            except KeyError:
+                result[printer_type] = pandas.DataFrame()
 
-        try:
-            ulti_df = df.loc[(df.loc[:, "Status"] == status) & (df.loc[:, "Printer Type"] == "Ultimaker")]
-        except KeyError:
-            ulti_df = pandas.DataFrame()
-
-        return {"Prusa": prusa_df, "Ultimaker": ulti_df}
+        return result
 
     def get_running(self):
         return self.get_printers("Running")
