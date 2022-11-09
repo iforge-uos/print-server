@@ -45,11 +45,11 @@ class Backend:
         self.fleet.connect("all")
 
     def connect_printer(self, printer_name):
-        self.fleet.attach_printer(printer_name)
+        self.fleet.connect_printer(printer_name)
         self.update()
 
     def disconnect_printer(self, printer_name):
-        self.fleet.detach_printer(printer_name)
+        self.fleet.disconnect_printer(printer_name)
         self.update()
 
     def update(self):

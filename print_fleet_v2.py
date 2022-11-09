@@ -142,6 +142,7 @@ class PrintFleet:
                     while printer_dict['details']['state'] == "connecting":
                         time.sleep(0.5)
                         printer_dict['details'] = printer_dict['client'].job_info()
+                        printer_dict['details']['state'] = printer_dict['details']['state'].lower()
 
                     if "error" in printer_dict['details']:
                         printer_dict['details']['state'] = "error"
@@ -202,7 +203,7 @@ class PrintFleet:
                 except RuntimeError as e:
                     print(f"Error, usually from non-existent path? - {e}")
 
-    def attach_printer(self, printer_name):
+    def connect_printer(self, printer_name):
         self.printers[printer_name]["client"].connect(port="/dev/ttyACM0")
         time.sleep(0.5)
         while self.printers[printer_name]["details"]["state"].lower() not in ["available", "finished",
@@ -211,7 +212,7 @@ class PrintFleet:
             # wait for daemon to report updated state
             time.sleep(0.5)
 
-    def detach_printer(self, printer_name):
+    def disconnect_printer(self, printer_name):
         self.printers[printer_name]["client"].disconnect()
         time.sleep(0.5)
         while self.printers[printer_name]["details"]["state"].lower() not in ["offline", "unreachable"]:
