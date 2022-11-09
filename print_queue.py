@@ -34,10 +34,21 @@ class PrintQueue:
     def update(self):
         # self.print_sheet.update_data()
         self.print_sheet_df = self.print_sheet.get_data()
-        self.joblist = self.print_sheet.get_queued()[self.printer_type]
+        self.joblist = pd.DataFrame()
+        try:
+            self.joblist = self.print_sheet.get_queued()[self.printer_type]
+        except KeyError:
+            # no prints queued for this printer_type
+            pass
 
     def get_running_printers(self):
-        running_df = self.print_sheet.get_running()[self.printer_type]
+        running_df = pd.DataFrame()
+        try:
+            running_df = self.print_sheet.get_running()[self.printer_type]
+        except KeyError:
+            # no prints queued for this printer_type
+            pass
+
         if running_df.shape[0] > 0:
             running_df.set_index('Printer', inplace=True)
             running_dict = running_df.to_dict('index')
