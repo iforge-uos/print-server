@@ -39,6 +39,9 @@ class Spreadsheet:
             df = copy.deepcopy(self.dataframe)
         return df
 
+    def update_data(self):
+        with self.df_lock:
+            self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA", head=3))
     def _update_data(self):
         s = 5.0
         while True:
@@ -49,8 +52,7 @@ class Spreadsheet:
                     requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='sheets.googleapis.com', port=443): Read timed out. (read timeout=120)
                 if left active for too long
                 """
-                with self.df_lock:
-                    self.dataframe = pd.DataFrame(self.queue_sheet.get_all_records(value_render_option="FORMULA", head=3))
+                self.update_data()
                 s = 5.0  # reset s when successful
                 time.sleep(5)
             except gspread.exceptions.APIError as e:

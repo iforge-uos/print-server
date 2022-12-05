@@ -32,7 +32,7 @@ class PrintQueue:
         pd.set_option('display.max_colwidth', None)
 
     def update(self):
-        # self.print_sheet.update_data()
+        self.print_sheet.update_data()
         self.print_sheet_df = self.print_sheet.get_data()
         self.joblist = pd.DataFrame()
         try:
