@@ -46,30 +46,28 @@ class Spreadsheet:
         # print(self.dataframe.loc[:, "prus"] == "Alistair Mitchell")
         # print(self.dataframe.loc[self.dataframe.loc[:, "prus"] == "Alistair Mitchell"])
 
+    def get_printers(self, status):
+        result = {}
+
+        self.update_data()
+        df = self.dataframe.loc[self.dataframe.loc[:, "Status"] == status]
+
+        printer_types = list(set(df.loc[:, "Printer Type"]))
+        for printer_type in printer_types:
+            try:
+                result[printer_type] = df.loc[
+                    (df.loc[:, "Status"] == status) & (df.loc[:, "Printer Type"] == printer_type)]
+            except KeyError:
+                result[printer_type] = pd.DataFrame()
+
+        return result
     def get_running(self):
         # return dict of two dataframes, one for each printer type, for rows where "Status" column is "Running"
-        prusaDf = self.dataframe.loc[
-            (self.dataframe.loc[:, "Status"] == "Running") & (self.dataframe.loc[:, "Printer Type"] == "Prusa")]
-        ultiDf = self.dataframe.loc[
-            (self.dataframe.loc[:, "Status"] == "Running") & (self.dataframe.loc[:, "Printer Type"] == "Ultimaker")]
-        return {"Prusa": prusaDf, "Ultimaker": ultiDf}
-
-    #####
+        return self.get_printers("Running")
 
     def get_queued(self):
         # return dict of two dataframes, one for each printer type, for rows where "Status" column is "Queued"
-        prusaDf = self.dataframe.loc[
-            (self.dataframe.loc[:, "Status"] == "Queued") & (self.dataframe.loc[:, "Printer Type"] == "Prusa")]
-        ultiDf = self.dataframe.loc[
-            (self.dataframe.loc[:, "Status"] == "Queued") & (self.dataframe.loc[:, "Printer Type"] == "Ultimaker")]
-        return {"Prusa": prusaDf, "Ultimaker": ultiDf}
-
-        # out_rows = []
-        # for cell in self.queue_sheet.findall(search_str):
-        #     if cell.col == 9:  # only search "Status" column
-        #         if printer_type == "" or printer_type == self.get_cell_value(cell.row, 10):
-        #             out_rows.append(self.queue_sheet.row_values(cell.row))
-        # return out_rows
+        return self.get_printers("Queued")
 
     def get_cell_value(self, row, col):
         return self.queue_sheet.cell(row, col).value
