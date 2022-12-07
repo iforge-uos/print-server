@@ -55,7 +55,7 @@ class Backend:
     def update(self):
         self.queue.update()
         running_printers = self.queue.get_running_printers()
-        self.fleet.update_running(running_printers)
+        self.fleet.update(printer_name='all', queue_running=running_printers)
 
     def do_print(self, printer_name):
         filename = self.queue.download_selected()

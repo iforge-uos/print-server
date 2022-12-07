@@ -23,7 +23,7 @@ class PrintFleet:
 
     def connect_clients(self):
         for printer, accessDict in self.printer_access.items():
-            self.printers[printer] = {"name": printer, "client": None, "print_job": None, 'status': 'offline',
+            self.printers[printer] = {"name": printer, "client": None, "print_job": None, 'status': 'unreachable',
                                       'printing': False, 'details': {}}
             try:
                 print(f"Connecting to {printer.capitalize()}... ", end='')

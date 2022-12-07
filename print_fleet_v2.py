@@ -48,13 +48,6 @@ class PrintFleet:
         del self.printers
         pass
 
-    def thread_connect(self, param_dict):
-        client = octorest.OctoRest(
-            url="http://" + param_dict["ip"]
-                + ":" + param_dict["port"],
-            apikey=param_dict["apikey"])
-        param_dict["client"] = client
-
     def connect(self, printer_name):
         if printer_name == "all":
             for i_printer in self.printers.keys():
@@ -65,38 +58,30 @@ class PrintFleet:
 
         else:
             print(f"Connecting to {printer_name:10s}...\t", end="")
-                logging.info(f"Attempting connection, {printer_name} at {self.printers[printer_name]['ip']}")
+            logging.info(f"Attempting connection, {printer_name} at {self.printers[printer_name]['ip']}")
+            self.printers[printer_name]["client"] = None
 
-                    self.printers[printer_name]["client"] = octorest.OctoRest(
-                        url="http://" + self.printers[printer_name]["ip"]
-                            + ":" + self.printers[printer_name]["port"],
-                        apikey=self.printers[printer_name]["apikey"])
-                except ConnectionError as e:
-                    # print("This error:")
-                    # print(e)
-                    self.printers[printer_name]["client"] = None
-            else:
-                arg_return_dict = multiprocessing.Manager().dict()
-                arg_return_dict['ip'] = self.printers[printer_name]['ip']
-                arg_return_dict['port'] = self.printers[printer_name]['port']
-                arg_return_dict['apikey'] = self.printers[printer_name]['apikey']
-                arg_return_dict['client'] = self.printers[printer_name]['client']
+            arg_return_dict = multiprocessing.Manager().dict()
+            arg_return_dict['ip'] = self.printers[printer_name]['ip']
+            arg_return_dict['port'] = self.printers[printer_name]['port']
+            arg_return_dict['apikey'] = self.printers[printer_name]['apikey']
+            arg_return_dict['client'] = None  # self.printers[printer_name]['client']
 
-                # Multiprocessing used so the process can be killed if the printer doesn't connect within a set time
-                p = multiprocessing.Process(target=thread_connect, args=(arg_return_dict,))
-                p.start()
-                p.join(OCTOREST_TIMEOUT)
+            # Multiprocessing used so the process can be killed if the printer doesn't connect within a set time
+            p = multiprocessing.Process(target=thread_connect, args=(arg_return_dict,))
+            p.start()
+            p.join(OCTOREST_TIMEOUT)
 
-                if p.is_alive():
-                    logging.info(f"Forced timeout, {printer_name} at {arg_return_dict['ip']}")
-                    p.terminate()
-                    p.join()
+            if p.is_alive():
+                logging.info(f"Forced timeout, {printer_name} at {arg_return_dict['ip']}")
+                p.terminate()
+                p.join()
 
-                self.printers[printer_name]['client'] = arg_return_dict['client']
+            self.printers[printer_name]['client'] = arg_return_dict['client']
 
-                if not self.printers[printer_name]['client']:
-                    self.printers[printer_name]['details'] = {'state': "unreachable"}
-                    logging.info(f"Connection failed, {printer_name} at {self.printers[printer_name]['ip']}")
+            if not self.printers[printer_name]['client']:
+                self.printers[printer_name]['details'] = {'state': "unreachable"}
+                logging.info(f"Connection failed, {printer_name} at {self.printers[printer_name]['ip']}")
 
             try:
                 # attempt to get job_info - will except if octopi is disconnected from printer?
