@@ -5,6 +5,7 @@ import time
 from cryptography.fernet import Fernet
 import os
 import logging
+import getpass
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.ERROR)
@@ -81,3 +82,10 @@ class Backend:
         self.fleet.clear_files(printer_name)
 
         self.queue.mark_result(printer_name, "Failed", requeue, comment)
+
+    def auth_admin(self):
+        pwd = getpass.getpass("Enter Admin Password:\n>> ")
+        if pwd == self.secrets["admin"]["password"]:
+            return True
+        else:
+            return False

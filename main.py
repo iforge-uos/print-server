@@ -1,4 +1,3 @@
-import getpass
 import time
 from main_backend import Backend
 
@@ -284,8 +283,8 @@ if __name__ == '__main__':
             backend.connect()
 
         elif choice == "A":  # attempt to enter admin mode
-            pwd = getpass.getpass("Enter Admin Password:\n>> ")
-            if pwd == "":
+            auth = backend.auth_admin()
+            if auth:
                 print("Access granted")
                 backend.update()
 
