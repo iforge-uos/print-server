@@ -61,6 +61,7 @@ class Spreadsheet:
                 result[printer_type] = pd.DataFrame()
 
         return result
+
     def get_running(self):
         # return dict of two dataframes, one for each printer type, for rows where "Status" column is "Running"
         return self.get_printers("Running")
