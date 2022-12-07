@@ -4,6 +4,7 @@ from google_spreadsheet import Spreadsheet
 from google_drive import Drive
 import pandas as pd
 import time
+import logging
 
 
 def sheets2date(days_from_epoch):
@@ -31,7 +32,12 @@ class PrintQueue:
 
     def update(self):
         self.print_sheet.update_data()
-        self.joblist = self.print_sheet.get_queued()[self.printer_type]
+        self.joblist = pd.DataFrame()
+        try:
+            self.joblist = self.print_sheet.get_queued()[self.printer_type]
+        except KeyError:
+            # no prints queued for this printer_type
+            pass
 
     def get_running_printers(self):
         return self.print_sheet.get_running()[self.printer_type]["Printer"].tolist()
@@ -43,6 +49,7 @@ class PrintQueue:
         self.update()
         self.selected = self.print_sheet.dataframe.loc[self.print_sheet.dataframe.loc[:, "Unique ID"] == id, :].copy()
         if self.selected.shape[0] > 1:  # multiple instances of id
+            logging.error("Multiple Unique IDs in dataset")
             raise ValueError("Multiple Unique IDs in dataset")
 
     def select_by_printer(self, printer_name):

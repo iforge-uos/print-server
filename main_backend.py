@@ -4,15 +4,24 @@ import json
 import time
 from cryptography.fernet import Fernet
 import os
+import logging
 
+logging.basicConfig()
+logging.getLogger().setLevel(logging.ERROR)
 
 class Backend:
-    def __init__(self, printer_list):
+    def __init__(self, printer_group):
+        logging.info(f"Starting backend, {printer_group}")
         self.secrets = {}
         self.load_secrets()
 
-        self.printers = self.secrets["printers"][printer_list]
-        self.printer_type = list(set([val["type"] for i, val in self.printers.items()]))[0].capitalize()
+        valid_groups = list(self.secrets["printers"].keys())
+        if not printer_group in valid_groups:
+            logging.critical("Invalid printer group provided")
+            exit(-1)
+
+        self.printers = self.secrets["printers"][printer_group]
+        self.printer_type = list(set([val["type"] for i, val in self.printers.items()]))[0]
         self.queue = print_queue.PrintQueue(google_secrets=self.secrets["google_secrets"], printer_type=self.printer_type)
         print("Performing initial printer connection, this may take some time")
         self.fleet = print_fleet.PrintFleet(self.printers)
@@ -32,22 +41,21 @@ class Backend:
         decrypted = fernet.decrypt(data)
 
         self.secrets = json.loads(decrypted)
-
     def connect(self):
         self.fleet.connect("all")
 
     def connect_printer(self, printer_name):
-        self.fleet.attach_printer(printer_name)
+        self.fleet.connect_printer(printer_name)
         self.update()
 
     def disconnect_printer(self, printer_name):
-        self.fleet.detach_printer(printer_name)
+        self.fleet.disconnect_printer(printer_name)
         self.update()
 
     def update(self):
         self.queue.update()
         running_printers = self.queue.get_running_printers()
-        self.fleet.update("all", queue_running=running_printers)
+        self.fleet.update_running(running_printers)
 
     def do_print(self, printer_name):
         filename = self.queue.download_selected()

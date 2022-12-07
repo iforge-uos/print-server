@@ -4,20 +4,31 @@ import json
 import time
 from cryptography.fernet import Fernet
 import multiprocessing
+import logging
 
 """
-Connection State Conventions:
-pi connected, printer connected: online
-pi connected, printer disconnected: offline
-pi disconnected (printer unknown): unreachable
+Conventions:
+    Connection:
+        |    \\ Printer ||      y           n    |
+        |_Pi__\\________||_____________|_________|
+        |       y       ||   online    | offline |
+        |       n       || unreachable |   n/a   |
 
-Status Conventions:
-Printing, queue printing: printing
-Printing, queue not printing: queue_error
-Not printing, queue printing: finished
-Not printing, queue not printing: available
+    Status:
+        |        \\ Queue || printing | not printing |
+        |_Printer_\\______||__________|______________|
+        |    printing     || printing | queue_error  |
+        |  not printing   || finished |  available   | 
 """
 DO_THREAD = True
+
+OCTOREST_TIMEOUT = 5
+
+def thread_connect(param_dict):
+    client = octorest.OctoRest(
+        url=f"http://{param_dict['ip']}:{param_dict['port']}",
+        apikey=param_dict['apikey'])
+    param_dict['client'] = client
 
 
 class PrintFleet:
@@ -54,8 +65,8 @@ class PrintFleet:
 
         else:
             print(f"Connecting to {printer_name:10s}...\t", end="")
-            if not DO_THREAD:
-                try:
+                logging.info(f"Attempting connection, {printer_name} at {self.printers[printer_name]['ip']}")
+
                     self.printers[printer_name]["client"] = octorest.OctoRest(
                         url="http://" + self.printers[printer_name]["ip"]
                             + ":" + self.printers[printer_name]["port"],
@@ -66,24 +77,26 @@ class PrintFleet:
                     self.printers[printer_name]["client"] = None
             else:
                 arg_return_dict = multiprocessing.Manager().dict()
-                arg_return_dict["ip"] = self.printers[printer_name]["ip"]
-                arg_return_dict["port"] = self.printers[printer_name]["port"]
-                arg_return_dict["apikey"] = self.printers[printer_name]["apikey"]
-                arg_return_dict["client"] = self.printers[printer_name]["client"]
+                arg_return_dict['ip'] = self.printers[printer_name]['ip']
+                arg_return_dict['port'] = self.printers[printer_name]['port']
+                arg_return_dict['apikey'] = self.printers[printer_name]['apikey']
+                arg_return_dict['client'] = self.printers[printer_name]['client']
 
-                p = multiprocessing.Process(target=self.thread_connect, args=(arg_return_dict,))
+                # Multiprocessing used so the process can be killed if the printer doesn't connect within a set time
+                p = multiprocessing.Process(target=thread_connect, args=(arg_return_dict,))
                 p.start()
-                p.join(5)
+                p.join(OCTOREST_TIMEOUT)
 
                 if p.is_alive():
+                    logging.info(f"Forced timeout, {printer_name} at {arg_return_dict['ip']}")
                     p.terminate()
                     p.join()
 
-                self.printers[printer_name]["client"] = arg_return_dict["client"]
+                self.printers[printer_name]['client'] = arg_return_dict['client']
 
-            if not self.printers[printer_name]["client"]:
-                self.printers[printer_name]["details"] = {'state': "unreachable"}
-                # print("Failed")
+                if not self.printers[printer_name]['client']:
+                    self.printers[printer_name]['details'] = {'state': "unreachable"}
+                    logging.info(f"Connection failed, {printer_name} at {self.printers[printer_name]['ip']}")
 
             try:
                 # attempt to get job_info - will except if octopi is disconnected from printer?
@@ -158,7 +171,7 @@ class PrintFleet:
             except RuntimeError as e:
                 print(f"Error, usually from non-existent path? - {e}")
 
-    def attach_printer(self, printer_name):
+    def connect_printer(self, printer_name):
         self.printers[printer_name]["client"].connect(port="/dev/ttyACM0")
         self.update(printer_name)
         while self.printers[printer_name]["details"]["state"].lower() not in ["available", "finished",
@@ -167,7 +180,7 @@ class PrintFleet:
             self.update(printer_name)
             time.sleep(0.5)
 
-    def detach_printer(self, printer_name):
+    def disconnect_printer(self, printer_name):
         self.printers[printer_name]["client"].disconnect()
         self.update(printer_name)
         while self.printers[printer_name]["details"]["state"].lower() not in ["offline", "unreachable"]:
