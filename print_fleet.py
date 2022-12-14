@@ -23,7 +23,7 @@ class PrintFleet:
 
     def connect_clients(self):
         for printer, accessDict in self.printer_access.items():
-            self.printers[printer] = {"printer_name": printer, "client": None, "print_job": None, 'status': 'offline',
+            self.printers[printer] = {"name": printer, "client": None, "print_job": None, 'status': 'unreachable',
                                       'printing': False, 'details': {}}
             try:
                 print(f"Connecting to {printer.capitalize()}... ", end='')
@@ -64,7 +64,7 @@ class PrintFleet:
                         status = printer['client'].printer()
                         job_info = printer['client'].job_info()
 
-                        # print(f"Octoprint Status for {printer['printer_name']}:\n{status}\nend")  # TODO make debug
+                        # print(f"Octoprint Status for {printer['name']}:\n{status}\nend")  # TODO make debug
 
                         printer['details'] = {'status': status,
                                               'job_info': job_info
@@ -96,13 +96,13 @@ class PrintFleet:
                 continue
 
         for printer in self.printers.values():
-            if printer['printer_name'] not in queue_running and printer['printing']:
+            if printer['name'] not in queue_running and printer['printing']:
                 printer['status'] = "invalid"
 
     def get_status(self):
         status_dict = {"available": [], "printing": [], "finished": [], "invalid": [], "offline": []}
         for printer in self.printers.values():
-            status_dict[printer["status"]].append(printer["printer_name"])
+            status_dict[printer["status"]].append(printer["name"])
         return status_dict
 
     def add_print(self, filename, path=""):
@@ -122,7 +122,7 @@ class PrintFleet:
         t0 = time.time()
         while self.selected_printer["client"].printer()['state']['flags']['cancelling']:
             time.sleep(0.5)
-        print(f"Cancel of {self.selected_printer['printer_name']} complete, time taken: {time.time() - t0:.1f}s")
+        print(f"Cancel of {self.selected_printer['name']} complete, time taken: {time.time() - t0:.1f}s")
         time.sleep(0.5)
 
     def clear_files(self):
@@ -146,5 +146,5 @@ class PrintFleet:
     #     """
     #     message = "\nCurrent GCODE Files:\n"
     #     for i, k in enumerate(self.client.files()['files']):
-    #         message += f"{i}.\t{k['printer_name']}\n"
+    #         message += f"{i}.\t{k['name']}\n"
     #     print(message)

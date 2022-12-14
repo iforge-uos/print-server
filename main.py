@@ -1,4 +1,3 @@
-import getpass
 import time
 from main_backend import Backend
 
@@ -47,7 +46,7 @@ def list_printers(backend):
         print_list([f"{job[2].split(',')[-1][1:-2][:32]:32s}"
                     f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
                     f"\t{job[7]}"
-                    for job in joblist.loc[:].values.tolist()])
+                    for job in joblist.loc[:].values.tolist()[:10]])
 
 
 def print_print(backend):
@@ -284,8 +283,8 @@ if __name__ == '__main__':
             backend.connect()
 
         elif choice == "A":  # attempt to enter admin mode
-            pwd = getpass.getpass("Enter Admin Password:\n>> ")
-            if pwd == "":
+            auth = backend.auth_admin()
+            if auth:
                 print("Access granted")
                 backend.update()
 

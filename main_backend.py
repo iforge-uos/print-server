@@ -5,6 +5,7 @@ import time
 from cryptography.fernet import Fernet
 import os
 import logging
+import getpass
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.ERROR)
@@ -55,7 +56,7 @@ class Backend:
     def update(self):
         self.queue.update()
         running_printers = self.queue.get_running_printers()
-        self.fleet.update_running(running_printers)
+        self.fleet.update(printer_name='all', queue_running=running_printers)
 
     def do_print(self, printer_name):
         filename = self.queue.download_selected()
@@ -81,3 +82,10 @@ class Backend:
         self.fleet.clear_files(printer_name)
 
         self.queue.mark_result(printer_name, "Failed", requeue, comment)
+
+    def auth_admin(self):
+        pwd = getpass.getpass("Enter Admin Password:\n>> ")
+        if pwd == self.secrets["admin"]["password"]:
+            return True
+        else:
+            return False
