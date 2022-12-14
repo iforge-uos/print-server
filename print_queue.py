@@ -40,7 +40,12 @@ class PrintQueue:
             pass
 
     def get_running_printers(self):
-        return self.print_sheet.get_running()[self.printer_type]["Printer"].tolist()
+        running_list = []
+        running_printers = self.print_sheet.get_running()
+        if self.printer_type in running_printers.keys():
+            running_list = running_printers[self.printer_type]["Printer"].tolist()
+
+        return running_list
 
     def get_jobs(self):
         return self.joblist
