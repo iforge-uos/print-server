@@ -1,5 +1,5 @@
 import print_fleet_v2 as print_fleet
-import print_queue
+import print_sheet
 import json
 import time
 from cryptography.fernet import Fernet
@@ -23,7 +23,7 @@ class Backend:
 
         self.printers = self.secrets["printers"][printer_group]
         self.printer_type = list(set([val["type"] for i, val in self.printers.items()]))[0]
-        self.queue = print_queue.PrintQueue(google_secrets=self.secrets["google_secrets"], printer_type=self.printer_type)
+        self.queue = print_sheet.PrintQueue(google_secrets=self.secrets["google_secrets"], printer_type=self.printer_type)
         print("Performing initial printer connection, this may take some time")
         self.fleet = print_fleet.PrintFleet(self.printers)
         print("Complete")
