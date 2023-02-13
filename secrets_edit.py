@@ -53,3 +53,4 @@ if __name__ == "__main__":
         print("Edit failed, please fix the issue and try again")
 
     os.remove("secrets.json")
+
