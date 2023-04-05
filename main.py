@@ -1,3 +1,5 @@
+from config import config_dict
+
 import time
 from main_backend import Backend
 
