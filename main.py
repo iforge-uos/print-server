@@ -1,3 +1,9 @@
+import copy
+import datetime
+
+import numpy as np
+from tabulate import tabulate
+
 from config import config_dict
 
 import time
@@ -33,6 +39,27 @@ def get_number_in_list(elem_list):
         print(f"{n} not recognised, try again")
 
 
+def readable_time(seconds):
+    hh = np.floor_divide(seconds, 3600)
+    mm = np.floor_divide(seconds - hh * 3600, 60)
+    ss = seconds - hh * 3600 - mm * 60
+    return f"{hh:02d}:{mm:02d}:{ss:02d}"
+
+
+def print_joblist(joblist):
+    if "USE_DB" in config_dict.keys() and config_dict["USE_DB"]:
+        crop_print_name = lambda print_name: print_name[:32]
+        joblist['print_name'] = joblist['print_name'].apply(crop_print_name)
+        joblist['print_time'] = joblist['print_time'].apply(readable_time)
+        print(tabulate(joblist.loc[:, ['id', 'print_name', 'print_time', 'upload_notes']], headers='keys',
+                       showindex=False, maxcolwidths=[None, 32, None, None]))
+    else:
+        print_list([f"{job[2].split(',')[-1][1:-2][:32]:32s}"
+                    f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
+                    f"\t{job[7]}"
+                    for job in joblist.loc[:].values.tolist()[:10]])
+
+
 def list_printers(backend):
     backend.update()
     print(f"Printers:")
@@ -45,10 +72,7 @@ def list_printers(backend):
     if joblist.shape[0] == 0:  # if none free, wait and restart loop
         print("\nNo jobs queued, try again later")
     else:
-        print_list([f"{job[2].split(',')[-1][1:-2][:32]:32s}"
-                    f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
-                    f"\t{job[7]}"
-                    for job in joblist.loc[:].values.tolist()[:10]])
+        print_joblist(copy.deepcopy(joblist))
 
 
 def print_print(backend):
@@ -187,6 +211,7 @@ def cancel_print(backend):
     print(f"Go and check {printing_printers[n]} is clear and ready to print again.")
     time.sleep(10)
 
+
 def disconnect_printer(backend):
     online_printers = []
     for i_printer in backend.printers.keys():
@@ -206,6 +231,7 @@ def disconnect_printer(backend):
     print(f'Attempting to detach {online_printers[n]}, please wait')
     backend.disconnect_printer(online_printers[n])
     print(f'{online_printers[n]} is now {backend.printers[online_printers[n]]["details"]["state"].lower()}')
+
 
 def connect_printer(backend):
     offline_printers = []
@@ -255,7 +281,7 @@ if __name__ == '__main__':
                        "'f'\t-\tFinish print handling (Complete/Fail)\n" \
                        "'c'\t-\tCancel print\n" \
                        "'r'\t-\tReconnect to all printers (slow)\n" \
-                       # "'a'\t-\tAdmin Mode"
+        # "'a'\t-\tAdmin Mode"
 
     admin_option_list = "\nAdmin Options:\n" \
                         "'c'\t-\tConnect a printer (to a Pi)\n" \
