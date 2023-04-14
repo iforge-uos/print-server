@@ -1,6 +1,6 @@
-from config import config_dict
+import config
 
-if "USE_DB" in config_dict.keys() and config_dict["USE_DB"]:
+if config.USE_DB:
     import print_db as print_queue  # use db print queue
 else:
     import print_sheet as print_queue  # use sheet print queue
@@ -29,7 +29,7 @@ class Backend:
 
         self.printers = self.secrets["printers"][printer_group]
         self.printer_type = list(set([val["type"] for i, val in self.printers.items()]))[0]
-        if "USE_DB" in config_dict.keys() and config_dict["USE_DB"]:
+        if config.USE_DB:
             self.queue = print_queue.PrintQueue(db_secrets=self.secrets["db_secrets"])
         else:
             self.queue = print_queue.PrintQueue(google_secrets=self.secrets["google_secrets"],printer_type=self.printer_type)
