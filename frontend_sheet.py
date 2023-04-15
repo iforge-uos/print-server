@@ -5,6 +5,8 @@ import numpy as np
 from tabulate import tabulate
 
 import time
+
+import inputs
 from main_backend import Backend
 
 import config
@@ -248,12 +250,12 @@ def run():
     # args = parser.parse_args()
     # secrets_key = args.secrets_key
 
-    group = input("Select area: ('Mainspace' or 'Heartspace')\n").lower()
-    # support shortcuts for common selections
-    if group == "m":
-        group = "mainspace"
-    elif group == "h":
-        group = "heartspace"
+    group = inputs.get_choice(prompt="Please select a printer group",
+                              options=[
+                                  inputs.Option("mainspace", "m"),
+                                  inputs.Option("heartspace", "h"),
+                                  inputs.Option("exotic", secret=True)
+                              ])
 
     backend = Backend(printer_group=str(group).capitalize())
 
@@ -261,59 +263,67 @@ def run():
     backend.update()
     list_printers(backend)
 
-    base_option_list = "\nSelect action:\n" \
-                       "'l'\t-\tList\n" \
-                       "'p'\t-\tPrint\n" \
-                       "'f'\t-\tFinish print handling (Complete/Fail)\n" \
-                       "'c'\t-\tCancel print\n" \
-                       "'r'\t-\tReconnect to all printers (slow)\n" \
-        # "'a'\t-\tAdmin Mode"
+    base_options = [
+        inputs.Option('List', short='l'),
+        inputs.Option('Print', short='p'),
+        inputs.Option('Finish', short='f', desc='Mark finish print as Complete/Fail'),
+        inputs.Option('Cancel', short='c', desc='Cancel a running print'),
+        inputs.Option('Reconnect', short='r', desc='Reconnect to all printers in group (slow)'),
+        inputs.Option('Admin Mode', short='a', desc='For authorised users only', secret=True),
+        inputs.Option('Quit', short='q', desc='For authorised users only', secret=True)
+    ]
 
-    admin_option_list = "\nAdmin Options:\n" \
-                        "'c'\t-\tConnect a printer (to a Pi)\n" \
-                        "'d'\t-\tDisconnect a printer (from a Pi)"
+    admin_options = [
+        inputs.Option('Connect', short='c', desc='Connect a printer (to a Pi)'),
+        inputs.Option('Disconnect', short='d', desc='Disconnect a printer (from a Pi)')
+    ]
 
     loop = True
     while loop:
 
-        print(base_option_list)
-        choice = input(">> ").upper()
+        choice = inputs.get_choice("Select action:",
+                                   options=base_options,
+                                   display_options=True,
+                                   display_secrets=False)
 
         backend.update()
 
-        if choice == "L":  # list status'
+        if choice == "list":  # list status'
             list_printers(backend)
 
-        elif choice == "P":  # select print and printer
+        elif choice == "print":  # select print and printer
             print_print(backend)
 
-        elif choice == "F":
+        elif choice == "finish":
             finish_print(backend)
 
-        elif choice == "C":
+        elif choice == "cancel":
             cancel_print(backend)
 
-        elif choice == "R":
+        elif choice == "reconnect":
             backend.connect()
 
-        elif choice == "A":  # attempt to enter admin mode
+        elif choice == "admin mode":  # attempt to enter admin mode
             auth = backend.auth_admin()
             if auth:
                 print("Access granted")
                 backend.update()
 
-                print(admin_option_list)
-                choice = input(">> ").upper()
+                choice = inputs.get_choice("Admin Mode:", options=admin_options)
 
-                if choice == "C":
+                if choice == "connect":
                     connect_printer(backend)
-                elif choice == "D":
+                elif choice == "disconnect":
                     disconnect_printer(backend)
             else:
                 print("Access denied")
 
-        elif choice in ["Q"]:
-            exit()
+        elif choice in ["quit"]:
+            auth = backend.auth_admin()
+            if auth:
+                exit()
+            else:
+                print("Access denied")
 
 if __name__ == "__main__":
     config.USE_DB = False
