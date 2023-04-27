@@ -44,8 +44,8 @@ def get_number_in_list(elem_list):
 def print_joblist(joblist):
     print_list([f"{job[2].split(',')[-1][1:-2][:32]:32s}"
                 f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
-                f"\t{job[7]}"
-                f"  {job[13][:20]}" 
+                f"\t{job[7][:8]:8s}"
+                f"\t{job[13][:20]}" 
                 for job in joblist.loc[:].values.tolist()[:14]])
 
 
