@@ -1,9 +1,4 @@
-import config
-
-if config.USE_DB:
-    import print_db as print_queue  # use db print queue
-else:
-    import print_sheet as print_queue  # use sheet print queue
+import print_db as print_queue  # use db print queue
 
 import print_fleet_v2 as print_fleet
 import json
@@ -29,10 +24,8 @@ class Backend:
 
         self.printers = self.secrets["printers"][printer_group]
         self.printer_type = list(set([val["type"] for i, val in self.printers.items()]))[0]
-        if config.USE_DB:
-            self.queue = print_queue.PrintQueue(db_secrets=self.secrets["db_secrets"])
-        else:
-            self.queue = print_queue.PrintQueue(google_secrets=self.secrets["google_secrets"],printer_type=self.printer_type)
+        self.queue = print_queue.PrintQueue(db_secrets=self.secrets["db_secrets"])
+
         print("Performing initial printer connection, this may take some time")
         self.fleet = print_fleet.PrintFleet(self.printers)
         print("Complete")

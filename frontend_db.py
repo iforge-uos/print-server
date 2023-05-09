@@ -7,9 +7,7 @@ from tabulate import tabulate
 import time
 
 import inputs
-from main_backend import Backend
-
-import config
+from backend_sheet import Backend
 
 
 def print_list(elem_list):
@@ -252,11 +250,10 @@ def connect_printer(backend):
     print(f'{offline_printers[n]} is now {backend.printers[offline_printers[n]]["details"]["state"].lower()}')
 
 def run():
-    group = inputs.get_choice(prompt="Please select a printer group",
+    group = inputs.get_choice(prompt="Please select a location",
                               options=[
                                   inputs.Option("mainspace", "m"),
-                                  inputs.Option("heartspace", "h"),
-                                  inputs.Option("exotic", secret=True)
+                                  inputs.Option("heartspace", "h")
                               ])
 
     backend = Backend(printer_group=str(group).capitalize())
@@ -329,5 +326,7 @@ def run():
 
 
 if __name__ == "__main__":
+    import config
+
     config.USE_DB = True
     run()

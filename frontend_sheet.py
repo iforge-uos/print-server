@@ -7,9 +7,7 @@ from tabulate import tabulate
 import time
 
 import inputs
-from main_backend import Backend
-
-import config
+from backend_sheet import Backend
 
 
 def print_list(elem_list):
@@ -327,5 +325,7 @@ def run():
                 print("Access denied")
 
 if __name__ == "__main__":
+    import config
+
     config.USE_DB = False
     run()
