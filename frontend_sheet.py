@@ -256,7 +256,7 @@ def run():
                               options=[
                                   inputs.Option("mainspace", "m"),
                                   inputs.Option("heartspace", "h"),
-                                  inputs.Option("exotic", "e")       #secret=True)
+                                  inputs.Option("exotic", "e", secret=True)
                               ])
 
     backend = Backend(printer_group=str(group).capitalize())
