@@ -87,8 +87,8 @@ def print_print(backend):
     n = get_number_in_list([f"{job[2].split(',')[-1][1:-2][:32]:32s}"
                             f"\t{time.strftime('%H:%M:%S', time.gmtime(job[3] * 24 * 60 * 60)):8s}"
                             f"\t{job[7][:8]:8s}"
-                            f"  {job[13][:19]}"
-                            for job in joblist.loc[:].values.tolist()])
+                            f"   {job[13][:19]}" 
+                            for job in joblist.loc[:].values.tolist()[:14]])
     if n == -1:  # cancel action
         return
     if n == -2:  # levelling print
