@@ -251,12 +251,13 @@ def connect_printer(backend):
     backend.connect_printer(offline_printers[n])
     print(f'{offline_printers[n]} is now {backend.printers[offline_printers[n]]["details"]["state"].lower()}')
 
-def run():
+def get_printer_group():
+    # Choose the printer group the backend will use
     group = inputs.get_choice(prompt="Please select a printer group",
                               options=[
                                   inputs.Option("mainspace", "m"),
                                   inputs.Option("heartspace", "h"),
-                                  inputs.Option("exotic", secret=True)
+                                  inputs.Option("exotic", "e", secret=True)
                               ])
 
     backend = Backend(printer_group=str(group).capitalize())
@@ -264,7 +265,10 @@ def run():
     # start with some information
     backend.update()
     list_printers(backend)
+    return(backend)
 
+def run():
+    
     base_options = [
         inputs.Option('List', short='l'),
         inputs.Option('Print', short='p'),
@@ -273,6 +277,7 @@ def run():
         inputs.Option('Reconnect', short='r', desc='Reconnect to all printers in group (slow)'),
         inputs.Option('Admin Mode', short='a', desc='For authorised users only', secret=True),
         inputs.Option('Quit', short='q', desc='For authorised users only', secret=True)
+        inputs.Option('Group', short='g', desc='Change printer group', secret=True)
     ]
 
     admin_options = [
@@ -280,6 +285,8 @@ def run():
         inputs.Option('Disconnect', short='d', desc='Disconnect a printer (from a Pi)')
     ]
 
+    backend = get_printer_group()
+    
     loop = True
     while loop:
 
@@ -326,6 +333,12 @@ def run():
                 exit()
             else:
                 print("Access denied")
+
+        
+        elif choice == "group": # change printer group (eg. main / heartspace)
+            backend = get_printer_group()
+
+
 
 
 if __name__ == "__main__":
